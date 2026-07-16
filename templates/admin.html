@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UnHinged Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0A0A0A;color:#E4E4E7;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:24px}
+h1{font-size:24px;font-weight:900;margin-bottom:24px;display:flex;align-items:center;gap:10px}
+h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#FF5C00;letter-spacing:.02em}
+.section{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:20px 24px;margin-bottom:20px}
+label{display:block;font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:#71717A;margin-bottom:6px;font-family:'JetBrains Mono',monospace}
+input,select,textarea{width:100%;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:13px;margin-bottom:14px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#FF5C00}
+textarea{min-height:120px;resize:vertical;line-height:1.5}
+select{appearance:none;cursor:pointer}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.btn{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.05em;transition:transform .12s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:#A1A1AA;border:1px solid rgba(255,255,255,.12)}
+.btn.ghost:hover{border-color:#FF5C00;color:#FF5C00;transform:none}
+.stat{text-align:center;padding:16px}
+.stat .num{font-size:32px;font-weight:900;color:#FF5C00}
+.stat .lbl{font-size:11px;color:#71717A;text-transform:uppercase;letter-spacing:.15em;margin-top:4px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.result{background:rgba(0,0,0,.4);border-radius:8px;padding:14px;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:12px;white-space:pre-wrap;line-height:1.6;max-height:400px;overflow-y:auto}
+.env-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.env-row .key{font-family:'JetBrains Mono',monospace;font-size:12px}
+.env-row .val{font-size:12px;font-weight:600}
+.env-row .val.set{color:#22C55E}
+.env-row .val.miss{color:#EF4444}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#000;border:1px solid rgba(255,255,255,.1);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;opacity:0;transition:all .2s;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Login */
+.login-box{max-width:360px;margin:120px auto;text-align:center}
+.login-box h1{justify-content:center}
+#app{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Login screen -->
+<div class="login-box" id="loginBox">
+  <h1>🔥 UnHinged Admin</h1>
+  <div class="section">
+    <label>Admin Password</label>
+    <input type="password" id="pw" placeholder="Enter password" autofocus>
+    <button class="btn" onclick="doLogin()" style="width:100%">Login</button>
+  </div>
+</div>
+
+<!-- Main admin (hidden until login) -->
+<div id="app">
+<h1>🔥 UnHinged Admin</h1>
+
+<!-- Stats -->
+<div class="section">
+  <h2>📊 Dashboard</h2>
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat"><div class="num" id="sTotal">-</div><div class="lbl">Total Users</div></div>
+    <div class="stat"><div class="num" id="sPro">-</div><div class="lbl">Pro Users</div></div>
+    <div class="stat"><div class="num" id="sScans">-</div><div class="lbl">Total Scans</div></div>
+    <div class="stat"><div class="num" id="sToday">-</div><div class="lbl">Active Today</div></div>
+  </div>
+  <button class="btn ghost" onclick="loadStats()">Refresh Stats</button>
+</div>
+
+<!-- Roast Config -->
+<div class="section">
+  <h2>🔥 Roast Model</h2>
+  <div class="row">
+    <div><label>Provider</label><select id="rProv"><option>anthropic</option><option>openai</option><option>google</option></select></div>
+    <div><label>Model</label><input id="rModel"></div>
+    <div><label>Max Tokens</label><input id="rTokens" type="number"></div>
+  </div>
+  <label>Temperature: <span id="rTempVal">1.0</span></label>
+  <input type="range" id="rTemp" min="0" max="2" step="0.1" style="margin-bottom:14px">
+  <label>System Prompt</label>
+  <textarea id="rPrompt" rows="8"></textarea>
+  <button class="btn" onclick="saveRoast()">Save Roast Config</button>
+</div>
+
+<!-- Rewrite Config -->
+<div class="section">
+  <h2>✍️ Rewrite Model</h2>
+  <div class="row">
+    <div><label>Provider</label><select id="wProv"><option>openai</option><option>anthropic</option><option>google</option></select></div>
+    <div><label>Model</label><input id="wModel"></div>
+    <div><label>Max Tokens</label><input id="wTokens" type="number"></div>
+  </div>
+  <label>Temperature: <span id="wTempVal">0.7</span></label>
+  <input type="range" id="wTemp" min="0" max="2" step="0.1" style="margin-bottom:14px">
+  <label>System Prompt</label>
+  <textarea id="wPrompt" rows="8"></textarea>
+  <button class="btn" onclick="saveRewrite()">Save Rewrite Config</button>
+</div>
+
+<!-- Test Panel -->
+<div class="section">
+  <h2>🧪 Test Panel</h2>
+  <label>Paste test email</label>
+  <textarea id="testMsg" rows="4" placeholder="Paste an email to test with current config..."></textarea>
+  <button class="btn" onclick="runTest()">Run Test</button>
+  <div class="result" id="testResult" style="display:none"></div>
+</div>
+
+<!-- Env Check -->
+<div class="section">
+  <h2>🔑 API Keys Status</h2>
+  <div id="envList"></div>
+  <button class="btn ghost" onclick="loadEnv()" style="margin-top:12px">Refresh</button>
+</div>
+
+</div><!-- /app -->
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+const API = window.location.origin;
+let authed = false;
+
+// Check if already authenticated
+fetch(`${API}/admin/config`,{credentials:'include'}).then(r=>{
+  if(r.ok){showApp();return r.json().then(loadConfig)}
+}).catch(()=>{});
+
+async function doLogin(){
+  const pw=document.getElementById('pw').value;
+  const r=await fetch(`${API}/admin/login`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+  if(r.ok){showApp();loadAll()}
+  else toast('Wrong password','err');
+}
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+function showApp(){document.getElementById('loginBox').style.display='none';document.getElementById('app').style.display='block';authed=true}
+
+async function loadAll(){
+  const r=await fetch(`${API}/admin/config`,{credentials:'include'});
+  if(r.ok)loadConfig(await r.json());
+  loadStats();loadEnv();
+}
+
+function loadConfig(c){
+  document.getElementById('rProv').value=c.roast_provider||'anthropic';
+  document.getElementById('rModel').value=c.roast_model||'';
+  document.getElementById('rTokens').value=c.roast_max_tokens||600;
+  document.getElementById('rTemp').value=c.roast_temperature||1;
+  document.getElementById('rTempVal').textContent=c.roast_temperature||1;
+  document.getElementById('rPrompt').value=c.roast_prompt||'';
+  document.getElementById('wProv').value=c.rewrite_provider||'openai';
+  document.getElementById('wModel').value=c.rewrite_model||'';
+  document.getElementById('wTokens').value=c.rewrite_max_tokens||800;
+  document.getElementById('wTemp').value=c.rewrite_temperature||0.7;
+  document.getElementById('wTempVal').textContent=c.rewrite_temperature||0.7;
+  document.getElementById('wPrompt').value=c.rewrite_prompt||'';
+}
+
+document.getElementById('rTemp').oninput=e=>document.getElementById('rTempVal').textContent=e.target.value;
+document.getElementById('wTemp').oninput=e=>document.getElementById('wTempVal').textContent=e.target.value;
+
+async function saveCfg(key,val){
+  const r=await fetch(`${API}/admin/config`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({config_key:key,config_value:val})});
+  return r.ok;
+}
+async function saveRoast(){
+  const ok=await Promise.all([
+    saveCfg('roast_provider',document.getElementById('rProv').value),
+    saveCfg('roast_model',document.getElementById('rModel').value),
+    saveCfg('roast_max_tokens',document.getElementById('rTokens').value),
+    saveCfg('roast_temperature',document.getElementById('rTemp').value),
+    saveCfg('roast_prompt',document.getElementById('rPrompt').value),
+  ]);
+  toast(ok.every(Boolean)?'Roast config saved ✓':'Save failed','');
+}
+async function saveRewrite(){
+  const ok=await Promise.all([
+    saveCfg('rewrite_provider',document.getElementById('wProv').value),
+    saveCfg('rewrite_model',document.getElementById('wModel').value),
+    saveCfg('rewrite_max_tokens',document.getElementById('wTokens').value),
+    saveCfg('rewrite_temperature',document.getElementById('wTemp').value),
+    saveCfg('rewrite_prompt',document.getElementById('wPrompt').value),
+  ]);
+  toast(ok.every(Boolean)?'Rewrite config saved ✓':'Save failed','');
+}
+
+async function loadStats(){
+  const r=await fetch(`${API}/admin/stats`,{credentials:'include'});
+  if(!r.ok)return;
+  const s=await r.json();
+  document.getElementById('sTotal').textContent=s.total_users;
+  document.getElementById('sPro').textContent=s.pro_users;
+  document.getElementById('sScans').textContent=s.total_scans;
+  document.getElementById('sToday').textContent=s.active_today;
+}
+
+async function loadEnv(){
+  const r=await fetch(`${API}/admin/env-check`,{credentials:'include'});
+  if(!r.ok)return;
+  const d=await r.json();
+  let html='';
+  for(const[k,v]of Object.entries(d)){
+    html+=`<div class="env-row"><span class="key">${k}</span><span class="val ${v==='set'?'set':'miss'}">${v==='set'?'✓ Set':'✗ Missing'}</span></div>`;
+  }
+  document.getElementById('envList').innerHTML=html;
+}
+
+async function runTest(){
+  const msg=document.getElementById('testMsg').value.trim();
+  if(!msg)return toast('Paste a test email first','err');
+  const el=document.getElementById('testResult');
+  el.style.display='block';el.textContent='Analyzing...';
+  const r=await fetch(`${API}/admin/test-analyze`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
+  const d=await r.json();
+  el.textContent=JSON.stringify(d,null,2);
+}
+
+function toast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(type==='err'?' err':'');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>
