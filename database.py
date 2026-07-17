@@ -4,7 +4,7 @@ import time
 from contextlib import contextmanager
 from prompts import ROAST_PROMPT, REWRITE_PROMPT
 
-DB_PATH = os.getenv("DB_PATH", "./data/unhinged.db")
+DB_PATH = os.getenv("DB_PATH", "./unhinged.db")
 FREE_LIMIT = 5
 
 
