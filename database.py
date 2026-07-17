@@ -52,12 +52,12 @@ def init_db():
         """)
         # Seed defaults
         defaults = {
-            "roast_provider": "anthropic",
-            "roast_model": "claude-haiku-4-5-20251001",
+            "roast_provider": "google",
+            "roast_model": "gemini-3.5-flash",
             "roast_max_tokens": "600",
             "roast_temperature": "1.0",
-            "rewrite_provider": "openai",
-            "rewrite_model": "gpt-4o-mini",
+            "rewrite_provider": "google",
+            "rewrite_model": "gemini-3.5-flash",
             "rewrite_max_tokens": "800",
             "rewrite_temperature": "0.7",
             "roast_prompt": ROAST_PROMPT,
@@ -65,7 +65,7 @@ def init_db():
         }
         for k, v in defaults.items():
             db.execute(
-                "INSERT OR IGNORE INTO llm_config (config_key, config_value) VALUES (?, ?)",
+                "INSERT OR REPLACE INTO llm_config (config_key, config_value) VALUES (?, ?)",
                 (k, v),
             )
 
