@@ -85,25 +85,72 @@ async def _call_google(client, model, system, user_msg, max_tokens, temp):
         json={
             "system_instruction": {"parts": [{"text": system}]},
             "contents": [{"parts": [{"text": user_msg}]}],
-            "generationConfig": {"maxOutputTokens": max_tokens, "temperature": temp},
+            "generationConfig": {
+                "maxOutputTokens": max_tokens,
+                "temperature": temp,
+                "thinkingConfig": {"thinkingBudget": 0},
+            },
         },
     )
     if r.status_code == 401 or r.status_code == 403:
         raise PermissionError("Invalid Google API key")
     r.raise_for_status()
-    return r.json()["candidates"][0]["content"]["parts"][0]["text"]
+    data = r.json()
+    # Gemini can return multiple parts (thinking + response)
+    parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+    # Get the last text part (skip thinking parts)
+    text = ""
+    for p in parts:
+        if "text" in p:
+            text = p["text"]
+    return text
 
 
 def parse_roast_json(raw: str) -> dict:
-    """Extract JSON from Claude's response, handling markdown wrapping."""
+    """Extract JSON from LLM response — handles markdown, thinking, extra text."""
+    import logging
+    log = logging.getLogger("unhinged")
+    log.info(f"Raw roast response (first 500 chars): {raw[:500]}")
+
     cleaned = raw.strip()
-    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
-    cleaned = re.sub(r"\s*```$", "", cleaned)
+    # Strip ALL markdown code fences (could be multiple)
+    cleaned = re.sub(r"```(?:json)?\s*", "", cleaned)
+    cleaned = re.sub(r"```", "", cleaned)
     cleaned = cleaned.strip()
+
+    # Try direct parse
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
-        m = re.search(r"\{[\s\S]*\}", cleaned)
-        if m:
+        pass
+
+    # Try to find JSON object anywhere in text
+    # Use greedy match for the outermost braces
+    matches = re.findall(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", cleaned)
+    for m in matches:
+        try:
+            data = json.loads(m)
+            if "score" in data or "roast" in data:
+                return data
+        except json.JSONDecodeError:
+            continue
+
+    # Last resort: try to find any {...} block
+    m = re.search(r"\{[\s\S]*\}", cleaned)
+    if m:
+        try:
             return json.loads(m.group(0))
-        return {"score": 5, "roast": "Couldn't parse the roast. Try again.", "risk": "Unknown risk level."}
+        except json.JSONDecodeError:
+            pass
+
+    # Manual extraction as final fallback
+    score = 5.0
+    sm = re.search(r"[\"\'](score)[\"\'\s]*:\s*([\d.]+)", cleaned, re.IGNORECASE)
+    if sm:
+        try:
+            score = float(sm.group(2))
+        except ValueError:
+            pass
+
+    roast = cleaned[:300] if len(cleaned) > 10 else "Couldn't parse the roast. Try again."
+    return {"score": score, "roast": roast, "risk": "See the roast above for risk details."}
