@@ -160,7 +160,8 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
   <button class="go-btn" id="goBtn" disabled>
     <span>🔥</span><span>How Unhinged Am I?</span>
   </button>
-  <div class="a-hint"><b>Free</b> · No sign-up · Results in seconds</div>
+  <div class="a-hint" id="scanHint"><b>Free</b> · No sign-up · Results in seconds</div>
+  <div id="scanCounter" style="display:none;text-align:center;margin-top:8px;font-family:ui-monospace,monospace;font-size:11px;color:#71717A"></div>
 
   <!-- Email capture after first roast -->
   <div class="email-capture" id="emailCapture">
@@ -246,8 +247,56 @@ const MAX = 2000;
 const MSGS = ["Measuring toxicity levels...","Consulting HR...","Counting exclamation marks...","Calculating your regret...","Locating chill pills...","Analyzing passive aggression..."];
 let freeUsed = parseInt(localStorage.getItem("uh_free") || "0");
 let userEmail = localStorage.getItem("uh_email") || "";
+let isPro = localStorage.getItem("uh_pro") === "1";
 let lastResult = null;
 let loadTimer = null;
+
+// Show pro bar or scan counter on load
+function updateStatusUI() {
+  const proBar = document.getElementById("proBar");
+  const scanCounter = document.getElementById("scanCounter");
+  const scanHint = document.getElementById("scanHint");
+  if (isPro) {
+    proBar.style.display = "flex";
+    scanHint.style.display = "none";
+    scanCounter.style.display = "block";
+    scanCounter.innerHTML = "✓ Pro · Unlimited scans";
+    scanCounter.style.color = "#FF5C00";
+    goBtn.disabled = false;
+  } else {
+    const remaining = Math.max(0, 5 - freeUsed);
+    if (remaining > 0) {
+      scanHint.style.display = "block";
+      scanCounter.style.display = "block";
+      scanCounter.innerHTML = `<span style="color:#FF5C00;font-weight:700">${remaining}</span> free scan${remaining === 1 ? "" : "s"} remaining`;
+    } else {
+      scanHint.style.display = "none";
+      scanCounter.style.display = "block";
+      scanCounter.innerHTML = '<span style="color:#EF4444">Free trial ended</span> · <a onclick="showPaywall()" style="color:#FF5C00;cursor:pointer">Upgrade to Pro →</a>';
+    }
+  }
+}
+
+// Check pro status from backend if email exists
+async function initProStatus() {
+  if (userEmail) {
+    try {
+      const r = await fetch("/api/check-status?email=" + encodeURIComponent(userEmail));
+      const d = await r.json();
+      if (d.is_pro) {
+        isPro = true;
+        localStorage.setItem("uh_pro", "1");
+        freeUsed = d.scans_used || freeUsed;
+      } else {
+        freeUsed = d.scans_used || freeUsed;
+        localStorage.setItem("uh_free", freeUsed);
+      }
+    } catch(e) {}
+  }
+  updateStatusUI();
+}
+
+initProStatus();
 
 const msg = document.getElementById("msg");
 const cc = document.getElementById("cc");
@@ -326,8 +375,11 @@ goBtn.addEventListener("click", async () => {
     }
 
     lastResult = d;
-    freeUsed++;
-    localStorage.setItem("uh_free", freeUsed);
+    if (!isPro) {
+      freeUsed++;
+      localStorage.setItem("uh_free", freeUsed);
+    }
+    updateStatusUI();
     renderResults(d);
 
     // After first scan, show email capture if no email yet
@@ -460,9 +512,17 @@ async function checkProStatus() {
   const r = await fetch("/api/check-status?email=" + encodeURIComponent(userEmail));
   const d = await r.json();
   if (d.is_pro) {
-    document.getElementById("paywallBox").remove();
+    isPro = true;
     localStorage.setItem("uh_pro", "1");
-    alert("Pro activated! You now have unlimited scans. 🔥");
+    const pw = document.getElementById("paywallBox");
+    if (pw) pw.remove();
+    updateStatusUI();
+    // Show pro confirmation
+    const conf = document.createElement("div");
+    conf.style.cssText = "margin-top:16px;padding:16px;border-radius:12px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);text-align:center;font-size:14px;color:#86EFAC";
+    conf.innerHTML = "🔥 Pro activated! You now have unlimited scans.";
+    document.getElementById("analyzer").appendChild(conf);
+    setTimeout(() => conf.remove(), 4000);
   } else {
     alert("Pro not activated yet. Complete the payment first.");
   }
