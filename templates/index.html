@@ -274,6 +274,12 @@ goBtn.addEventListener("click", async () => {
   const text = msg.value.trim();
   if (!text) return;
 
+  // Check if already hit free limit
+  if (freeUsed >= 5 && !localStorage.getItem("uh_pro")) {
+    showPaywall();
+    return;
+  }
+
   // Check if they need email first (after first free scan)
   if (freeUsed >= 1 && !userEmail) {
     emailCapture.style.display = "block";
@@ -308,9 +314,9 @@ goBtn.addEventListener("click", async () => {
     loadBox.style.display = "none";
 
     if (r.status === 402) {
-      // Trial ended — show upgrade
-      errBox.innerHTML = '⚡ Free scans used up. <a href="#pricing" style="color:#FF5C00;font-weight:700">Upgrade to Pro →</a>';
-      errBox.style.display = "block";
+      loadBox.style.display = "none";
+      errBox.style.display = "none";
+      showPaywall();
       return;
     }
     if (!r.ok) {
@@ -396,6 +402,70 @@ function renderResults(d) {
   resultCta.style.display = "block";
   shareRow.style.display = "flex";
   resultBox.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Paywall
+function showPaywall() {
+  const paywallEl = document.getElementById("paywallBox");
+  if (paywallEl) { paywallEl.style.display = "block"; return; }
+  const box = document.createElement("div");
+  box.id = "paywallBox";
+  box.style.cssText = "margin-top:20px;padding:24px;border-radius:14px;background:linear-gradient(135deg,rgba(255,92,0,.08),rgba(255,59,48,.04));border:1px solid rgba(255,92,0,.3);text-align:center";
+  box.innerHTML = `
+    <div style="font-size:28px;margin-bottom:10px">⚡</div>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:8px">Free trial complete</h3>
+    <p style="font-size:13px;color:#A1A1AA;margin-bottom:18px;line-height:1.6">You've used all 5 free roasts.<br>Upgrade to <b style="color:#FF5C00">UnHinged Pro</b> for unlimited scans.<br><span style="color:#71717A;font-size:12px">₹199/month · Cancel anytime</span></p>
+    <button onclick="doUpgrade()" style="width:100%;padding:15px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 20px rgba(255,92,0,.4)">🔥 Upgrade to Pro — ₹199/month</button>
+    <div style="margin-top:10px;font-size:12px;color:#52525B">Already upgraded? <a onclick="checkProStatus()" style="color:#FF5C00;cursor:pointer">Click here to activate</a></div>
+  `;
+  document.getElementById("analyzer").appendChild(box);
+  box.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function doUpgrade() {
+  if (!userEmail) {
+    const em = prompt("Enter your email to continue:");
+    if (!em || !em.includes("@")) return;
+    userEmail = em.trim().toLowerCase();
+    localStorage.setItem("uh_email", userEmail);
+  }
+  const btn = document.querySelector("#paywallBox button");
+  if (btn) { btn.textContent = "Opening payment..."; btn.disabled = true; }
+  try {
+    const r = await fetch("/api/create-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: userEmail })
+    });
+    const d = await r.json();
+    if (d.already_pro) {
+      alert("You are already Pro! Refresh the page.");
+      return;
+    }
+    if (d.payment_link) {
+      window.open(d.payment_link, "_blank");
+      if (btn) { btn.textContent = "Complete payment in new tab"; btn.disabled = false; }
+    } else {
+      if (btn) { btn.textContent = "🔥 Upgrade to Pro — ₹199/month"; btn.disabled = false; }
+      alert(d.message || "Payment error. Try again.");
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = "🔥 Upgrade to Pro — ₹199/month"; btn.disabled = false; }
+    alert("Network error. Try again.");
+  }
+}
+
+async function checkProStatus() {
+  if (!userEmail) return;
+  const r = await fetch("/api/check-status?email=" + encodeURIComponent(userEmail));
+  const d = await r.json();
+  if (d.is_pro) {
+    document.getElementById("paywallBox").remove();
+    localStorage.setItem("uh_pro", "1");
+    alert("Pro activated! You now have unlimited scans. 🔥");
+  } else {
+    alert("Pro not activated yet. Complete the payment first.");
+  }
 }
 
 // Share
