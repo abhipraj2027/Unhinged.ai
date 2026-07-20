@@ -79,9 +79,21 @@ async def _call_openai(client, model, system, user_msg, max_tokens, temp):
 
 
 async def _call_google(client, model, system, user_msg, max_tokens, temp):
+    key = GOOGLE_KEY()
+    # AQ. keys use Bearer auth header, AIzaSy keys use ?key= query param
+    if key.startswith("AQ."):
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {key}",
+        }
+    else:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+        headers = {"Content-Type": "application/json"}
+
     r = await client.post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GOOGLE_KEY()}",
-        headers={"Content-Type": "application/json"},
+        url,
+        headers=headers,
         json={
             "system_instruction": {"parts": [{"text": system}]},
             "contents": [{"parts": [{"text": user_msg}]}],
@@ -93,7 +105,7 @@ async def _call_google(client, model, system, user_msg, max_tokens, temp):
         },
     )
     if r.status_code == 401 or r.status_code == 403:
-        raise PermissionError("Invalid Google API key")
+        raise PermissionError(f"Invalid Google API key (status {r.status_code}): {r.text[:200]}")
     r.raise_for_status()
     data = r.json()
     # Gemini can return multiple parts (thinking + response)
