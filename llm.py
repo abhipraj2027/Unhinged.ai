@@ -80,16 +80,17 @@ async def _call_openai(client, model, system, user_msg, max_tokens, temp):
 
 async def _call_google(client, model, system, user_msg, max_tokens, temp):
     key = GOOGLE_KEY()
-    # AQ. keys use Bearer auth header, AIzaSy keys use ?key= query param
-    if key.startswith("AQ."):
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    # Try all possible auth methods for Google API keys
+    if key.startswith("AIzaSy"):
+        url = url + f"?key={key}"
+        headers = {"Content-Type": "application/json"}
+    else:
+        # AQ. and other newer key formats use x-goog-api-key header
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {key}",
+            "x-goog-api-key": key,
         }
-    else:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
-        headers = {"Content-Type": "application/json"}
 
     r = await client.post(
         url,
@@ -104,8 +105,12 @@ async def _call_google(client, model, system, user_msg, max_tokens, temp):
             },
         },
     )
-    if r.status_code == 401 or r.status_code == 403:
-        raise PermissionError(f"Invalid Google API key (status {r.status_code}): {r.text[:200]}")
+    if r.status_code in (401, 403, 404, 400):
+        import logging
+        logging.getLogger("unhinged").error(f"Google API error {r.status_code}: {r.text[:500]}")
+        if r.status_code == 404:
+            raise ValueError(f"Model '{model}' not found. Check model name.")
+        raise PermissionError(f"Google API error ({r.status_code}): {r.text[:200]}")
     r.raise_for_status()
     data = r.json()
     # Gemini can return multiple parts (thinking + response)

@@ -185,7 +185,10 @@ async def analyze(body: AnalyzeReq, request: Request):
         )
     except PermissionError as e:
         log.error(f"API key error: {e}")
-        raise HTTPException(500, "API configuration error. Contact support.")
+        raise HTTPException(500, f"API error: {e}")
+    except ValueError as e:
+        log.error(f"Model error: {e}")
+        raise HTTPException(500, f"Model error: {e}")
     except ConnectionError as e:
         raise HTTPException(429, str(e))
     except Exception as e:
