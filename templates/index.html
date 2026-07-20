@@ -391,6 +391,13 @@ goBtn.addEventListener("click", async () => {
   const text = msg.value.trim();
   if (!text) return;
 
+  // Minimum length check
+  if (text.length < 10) {
+    errBox.textContent = "Please paste a real email draft (at least 10 characters).";
+    errBox.style.display = "block";
+    return;
+  }
+
   // Check if already hit free limit
   if (freeUsed >= 5 && !localStorage.getItem("uh_pro")) {
     showPaywall();
@@ -437,7 +444,8 @@ goBtn.addEventListener("click", async () => {
       return;
     }
     if (!r.ok) {
-      errBox.textContent = d.detail || d.message || d.error || "Something broke. Try again.";
+      const errMsg = d.detail || d.message || d.error || "Something broke. Try again.";
+      errBox.textContent = errMsg;
       errBox.style.display = "block";
       return;
     }
@@ -458,7 +466,7 @@ goBtn.addEventListener("click", async () => {
   } catch (e) {
     clearInterval(loadTimer);
     loadBox.style.display = "none";
-    errBox.textContent = "Network error. Check your connection and try again.";
+    errBox.textContent = "Cannot reach server. Your app may be sleeping — wait 30 seconds and try again.";
     errBox.style.display = "block";
   }
 });

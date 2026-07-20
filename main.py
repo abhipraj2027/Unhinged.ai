@@ -163,6 +163,7 @@ async def analyze(body: AnalyzeReq, request: Request):
     rewrite_max = int(cfg.get("rewrite_max_tokens", "800"))
     rewrite_temp = float(cfg.get("rewrite_temperature", "0.7"))
 
+    log.info(f"Analyze request — email: {email}, message length: {len(message)}, provider: {cfg.get('roast_provider')}, model: {cfg.get('roast_model')}")
     try:
         roast_raw, rewrite_raw = await asyncio.gather(
             call_llm(
@@ -411,6 +412,7 @@ async def admin_test(body: TestReq, request: Request):
 
     cfg = db.get_all_config()
     t0 = time.time()
+    log.info(f"Analyze request — email: {email}, message length: {len(message)}, provider: {cfg.get('roast_provider')}, model: {cfg.get('roast_model')}")
     try:
         roast_raw, rewrite_raw = await asyncio.gather(
             call_llm(
