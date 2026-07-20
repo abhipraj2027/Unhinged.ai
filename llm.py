@@ -35,21 +35,13 @@ async def _call_anthropic(client, model, system, user_msg, max_tokens, temp):
         headers={
             "x-api-key": ANTHROPIC_KEY(),
             "anthropic-version": "2023-06-01",
-            "anthropic-beta": "prompt-caching-2024-07-31",  # enables caching
             "Content-Type": "application/json",
         },
         json={
             "model": model,
             "max_tokens": max_tokens,
             "temperature": temp,
-            # System prompt split into cacheable block + dynamic part
-            "system": [
-                {
-                    "type": "text",
-                    "text": system,
-                    "cache_control": {"type": "ephemeral"}  # cache this block
-                }
-            ],
+            "system": system,
             "messages": [{"role": "user", "content": user_msg}],
         },
     )
@@ -58,16 +50,7 @@ async def _call_anthropic(client, model, system, user_msg, max_tokens, temp):
     if r.status_code == 429:
         raise ConnectionError("Anthropic rate limited — wait a moment")
     r.raise_for_status()
-    data = r.json()
-    # Log cache performance when available
-    usage = data.get("usage", {})
-    cache_read = usage.get("cache_read_input_tokens", 0)
-    cache_created = usage.get("cache_creation_input_tokens", 0)
-    if cache_read or cache_created:
-        import logging
-        log = logging.getLogger("unhinged")
-        log.info(f"Anthropic cache — read: {cache_read} tokens, created: {cache_created} tokens, saved: ~{int(cache_read * 0.9)} tokens")
-    return data["content"][0]["text"]
+    return r.json()["content"][0]["text"]
 
 
 async def _call_openai(client, model, system, user_msg, max_tokens, temp):
@@ -92,14 +75,7 @@ async def _call_openai(client, model, system, user_msg, max_tokens, temp):
     if r.status_code == 429:
         raise ConnectionError("OpenAI rate limited — wait a moment")
     r.raise_for_status()
-    data = r.json()
-    # Log OpenAI cache hits
-    usage = data.get("usage", {}).get("prompt_tokens_details", {})
-    cached = usage.get("cached_tokens", 0)
-    if cached:
-        import logging
-        logging.getLogger("unhinged").info(f"OpenAI cache hit — {cached} tokens cached")
-    return data["choices"][0]["message"]["content"]
+    return r.json()["choices"][0]["message"]["content"]
 
 
 async def _call_google(client, model, system, user_msg, max_tokens, temp):
