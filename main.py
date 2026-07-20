@@ -66,7 +66,7 @@ def startup():
     db.init_db()
     log.info("Database initialized")
     # Check env vars
-    keys = ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"]
+    keys = ["GROQ_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"]
     for k in keys:
         status = "✓" if os.getenv(k) else "✗ MISSING"
         log.info(f"  {k}: {status}")
@@ -461,7 +461,7 @@ async def admin_env(request: Request):
     if not _check_admin(request):
         raise HTTPException(401, "Unauthorized")
     keys = [
-        "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY",
+        "GROQ_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY",
         "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET", "RAZORPAY_PLAN_ID",
     ]
     return {k: ("set" if os.getenv(k) else "missing") for k in keys}
