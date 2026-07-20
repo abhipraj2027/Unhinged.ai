@@ -132,6 +132,19 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
 .error-box{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);font-size:13px;color:#FCA5A5;display:none}
 
 @media(max-width:600px){.cards{grid-template-columns:1fr}.hero{padding:40px 0 20px}.analyzer{padding:20px}.email-row{flex-direction:column}}
+
+/* Upgrade Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:#141414;border:1px solid rgba(255,92,0,.3);border-radius:20px;padding:32px 28px;max-width:420px;width:100%;position:relative;box-shadow:0 32px 80px rgba(0,0,0,.8)}
+.modal-close{position:absolute;top:14px;right:16px;background:0;border:0;color:#71717A;font-size:20px;cursor:pointer}
+.modal-close:hover{color:#fff}
+.plan-card{border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px;margin-bottom:12px;cursor:pointer;transition:border-color .15s}
+.plan-card:hover{border-color:rgba(255,92,0,.4)}
+.plan-card.selected{border-color:#FF5C00;background:rgba(255,92,0,.05)}
+.plan-card .plan-name{font-size:13px;font-weight:700;margin-bottom:4px}
+.plan-card .plan-price{font-size:28px;font-weight:900;letter-spacing:-.02em}
+.plan-card .plan-desc{font-size:12px;color:#71717A;margin-top:4px}
+.plan-card .badge{display:inline-block;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -141,6 +154,7 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
   <div class="logo"><span>🔥</span> UnHinged</div>
   <div class="nav-btns">
     <a href="#pricing" class="nav-link">Pricing</a>
+    <button onclick="showUpgradeModal()" class="nav-link" id="upgradeNavBtn" style="background:transparent;border:1px solid rgba(255,92,0,.4);color:#FF5C00;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">⚡ Upgrade</button>
     <a href="#" class="nav-btn" id="chromeLink">🧩 Add to Chrome</a>
   </div>
 </nav>
@@ -240,6 +254,60 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
 </section>
 
 <footer>v2.3 · Built with Claude Haiku + GPT-4o-mini · © 2026 UnHinged</footer>
+</div>
+
+<!-- Upgrade Modal -->
+<div class="modal-overlay" id="upgradeModal" style="display:none" onclick="if(event.target===this)closeUpgradeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:32px;margin-bottom:8px">🔥</div>
+      <h2 style="font-size:20px;font-weight:900;letter-spacing:-.02em;margin-bottom:6px">Upgrade to UnHinged Pro</h2>
+      <p style="font-size:13px;color:#A1A1AA">Stop sending unhinged emails. Forever.</p>
+    </div>
+
+    <div class="plan-card selected" id="planMonthly" onclick="selectPlan('monthly')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="plan-name">Monthly <span class="badge" style="display:none" id="badgeMonthly">POPULAR</span></div>
+        <div style="width:18px;height:18px;border-radius:50%;border:2px solid #FF5C00;display:flex;align-items:center;justify-content:center" id="radioMonthly"><div style="width:8px;height:8px;border-radius:50%;background:#FF5C00"></div></div>
+      </div>
+      <div class="plan-price">₹199<span style="font-size:14px;color:#71717A;font-weight:400">/month</span></div>
+      <div class="plan-desc">30 scans/day · Cancel anytime</div>
+    </div>
+
+    <div class="plan-card" id="planYearly" onclick="selectPlan('yearly')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="plan-name">Yearly <span class="badge">SAVE ₹889</span></div>
+        <div style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center" id="radioYearly"></div>
+      </div>
+      <div class="plan-price">₹1,499<span style="font-size:14px;color:#71717A;font-weight:400">/year</span></div>
+      <div class="plan-desc">30 scans/day · ₹125/month · Best value</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,.03);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;color:#A1A1AA;line-height:1.7">
+        ✓ 30 scans per day<br>
+        ✓ Full AI roasts by Claude Haiku<br>
+        ✓ Professional rewrites by GPT-4o<br>
+        ✓ Works on web + Gmail extension<br>
+        ✓ Cancel anytime from dashboard
+      </div>
+    </div>
+
+    <div id="modalEmailRow" style="margin-bottom:12px;display:none">
+      <input type="email" id="modalEmail" placeholder="your@email.com" style="width:100%;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;font-size:13px;outline:none;font-family:ui-monospace,monospace">
+    </div>
+
+    <button onclick="doUpgradeFromModal()" id="modalPayBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 20px rgba(255,92,0,.35)">
+      🔥 Start Pro — ₹199/month
+    </button>
+    <div style="text-align:center;margin-top:10px;font-size:11px;color:#52525B">
+      Secured by Razorpay · UPI, Cards, Netbanking accepted
+    </div>
+    <div style="text-align:center;margin-top:8px;font-size:11px;color:#3F3F46">
+      Already a Pro? <a onclick="checkProFromModal()" style="color:#FF5C00;cursor:pointer">Restore access →</a>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -546,6 +614,122 @@ document.getElementById("shareCopy").addEventListener("click", async () => {
     setTimeout(() => document.getElementById("shareCopy").textContent = "Copy score", 2000);
   } catch {}
 });
+// Upgrade Modal
+let selectedPlan = "monthly";
+
+function showUpgradeModal() {
+  document.getElementById("upgradeModal").style.display = "flex";
+  if (!userEmail) {
+    document.getElementById("modalEmailRow").style.display = "block";
+    document.getElementById("modalEmail").value = "";
+  }
+}
+
+function closeUpgradeModal() {
+  document.getElementById("upgradeModal").style.display = "none";
+}
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  const monthly = document.getElementById("planMonthly");
+  const yearly = document.getElementById("planYearly");
+  const radioM = document.getElementById("radioMonthly");
+  const radioY = document.getElementById("radioYearly");
+  const btn = document.getElementById("modalPayBtn");
+
+  if (plan === "monthly") {
+    monthly.className = "plan-card selected";
+    yearly.className = "plan-card";
+    radioM.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#FF5C00"></div>';
+    radioM.style.borderColor = "#FF5C00";
+    radioY.innerHTML = "";
+    radioY.style.borderColor = "rgba(255,255,255,.2)";
+    btn.textContent = "🔥 Start Pro — ₹199/month";
+  } else {
+    yearly.className = "plan-card selected";
+    monthly.className = "plan-card";
+    radioY.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#FF5C00"></div>';
+    radioY.style.borderColor = "#FF5C00";
+    radioM.innerHTML = "";
+    radioM.style.borderColor = "rgba(255,255,255,.2)";
+    btn.textContent = "🔥 Start Pro — ₹1,499/year";
+  }
+}
+
+async function doUpgradeFromModal() {
+  let email = userEmail;
+  if (!email) {
+    email = document.getElementById("modalEmail").value.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      document.getElementById("modalEmail").style.borderColor = "#EF4444";
+      return;
+    }
+    userEmail = email;
+    localStorage.setItem("uh_email", email);
+  }
+
+  const btn = document.getElementById("modalPayBtn");
+  btn.textContent = "Opening payment...";
+  btn.disabled = true;
+
+  try {
+    const r = await fetch("/api/create-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, plan: selectedPlan })
+    });
+    const d = await r.json();
+    if (d.already_pro) {
+      isPro = true;
+      localStorage.setItem("uh_pro", "1");
+      closeUpgradeModal();
+      updateStatusUI();
+      return;
+    }
+    if (d.payment_link) {
+      window.open(d.payment_link, "_blank");
+      btn.textContent = "✓ Complete payment in new tab";
+      btn.disabled = false;
+    } else {
+      btn.textContent = selectedPlan === "monthly" ? "🔥 Start Pro — ₹199/month" : "🔥 Start Pro — ₹1,499/year";
+      btn.disabled = false;
+      alert(d.message || "Payment error. Please try again.");
+    }
+  } catch(e) {
+    btn.textContent = selectedPlan === "monthly" ? "🔥 Start Pro — ₹199/month" : "🔥 Start Pro — ₹1,499/year";
+    btn.disabled = false;
+    alert("Network error. Try again.");
+  }
+}
+
+async function checkProFromModal() {
+  const email = userEmail || document.getElementById("modalEmail")?.value.trim().toLowerCase();
+  if (!email) return;
+  try {
+    const r = await fetch("/api/check-status?email=" + encodeURIComponent(email));
+    const d = await r.json();
+    if (d.is_pro) {
+      isPro = true;
+      userEmail = email;
+      localStorage.setItem("uh_pro", "1");
+      localStorage.setItem("uh_email", email);
+      closeUpgradeModal();
+      updateStatusUI();
+      const pw = document.getElementById("paywallBox");
+      if (pw) pw.remove();
+    } else {
+      alert("Pro not found for this email. Complete payment first.");
+    }
+  } catch(e) { alert("Network error. Try again."); }
+}
+
+// Also make showPaywall open the modal
+function showPaywall() {
+  showUpgradeModal();
+}
+
+// Keyboard close
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeUpgradeModal(); });
 </script>
 </body>
 </html>

@@ -460,22 +460,3 @@ async def admin_env(request: Request):
         "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET", "RAZORPAY_PLAN_ID",
     ]
     return {k: ("set" if os.getenv(k) else "missing") for k in keys}
-
-# ── ENV VAR OVERRIDES for LLM config ──────────────────────
-# If DB config fails, these env vars take precedence
-import os as _os
-_PROVIDER_OVERRIDES = {
-    "roast_provider": _os.getenv("LLM_ROAST_PROVIDER"),
-    "roast_model": _os.getenv("LLM_ROAST_MODEL"),
-    "rewrite_provider": _os.getenv("LLM_REWRITE_PROVIDER"),
-    "rewrite_model": _os.getenv("LLM_REWRITE_MODEL"),
-}
-
-_original_get_all_config = db.get_all_config
-def _patched_get_all_config():
-    cfg = _original_get_all_config()
-    for k, v in _PROVIDER_OVERRIDES.items():
-        if v:
-            cfg[k] = v
-    return cfg
-db.get_all_config = _patched_get_all_config
