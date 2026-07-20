@@ -7,6 +7,7 @@ import httpx
 ANTHROPIC_KEY = lambda: os.getenv("ANTHROPIC_API_KEY", "")
 OPENAI_KEY = lambda: os.getenv("OPENAI_API_KEY", "")
 GOOGLE_KEY = lambda: os.getenv("GOOGLE_API_KEY", "")
+GROQ_KEY = lambda: os.getenv("GROQ_API_KEY", "")
 
 
 async def call_llm(
@@ -25,6 +26,8 @@ async def call_llm(
             return await _call_openai(client, model, system_prompt, user_message, max_tokens, temperature)
         elif provider == "google":
             return await _call_google(client, model, system_prompt, user_message, max_tokens, temperature)
+        elif provider == "groq":
+            return await _call_groq(client, model, system_prompt, user_message, max_tokens, temperature)
         else:
             raise ValueError(f"Unknown provider: {provider}")
 
@@ -121,6 +124,32 @@ async def _call_google(client, model, system, user_msg, max_tokens, temp):
         if "text" in p:
             text = p["text"]
     return text
+
+
+async def _call_groq(client, model, system, user_msg, max_tokens, temp):
+    """Groq uses OpenAI-compatible API — free, fast inference."""
+    r = await client.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {GROQ_KEY()}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": model,
+            "max_tokens": max_tokens,
+            "temperature": temp,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_msg},
+            ],
+        },
+    )
+    if r.status_code == 401:
+        raise PermissionError("Invalid Groq API key")
+    if r.status_code == 429:
+        raise ConnectionError("Groq rate limited — wait a moment")
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"]
 
 
 def parse_roast_json(raw: str) -> dict:

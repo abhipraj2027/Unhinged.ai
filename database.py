@@ -66,10 +66,10 @@ def init_db():
         """)
 
         # Always force Google as default (override any stale anthropic/openai entries)
-        roast_provider  = os.getenv("LLM_ROAST_PROVIDER",  "google")
-        roast_model     = os.getenv("LLM_ROAST_MODEL",     "gemini-2.0-flash")
-        rewrite_provider= os.getenv("LLM_REWRITE_PROVIDER","google")
-        rewrite_model   = os.getenv("LLM_REWRITE_MODEL",   "gemini-2.0-flash")
+        roast_provider  = os.getenv("LLM_ROAST_PROVIDER",  "groq")
+        roast_model     = os.getenv("LLM_ROAST_MODEL",     "llama-3.3-70b-versatile")
+        rewrite_provider= os.getenv("LLM_REWRITE_PROVIDER","groq")
+        rewrite_model   = os.getenv("LLM_REWRITE_MODEL",   "llama-3.3-70b-versatile")
 
         defaults = {
             "roast_provider":    roast_provider,
