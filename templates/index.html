@@ -131,7 +131,7 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
 
 .error-box{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);font-size:13px;color:#FCA5A5;display:none}
 
-@media(max-width:600px){.cards{grid-template-columns:1fr}.hero{padding:40px 0 20px}.analyzer{padding:20px}.email-row{flex-direction:column}}
+@media(max-width:700px){.cards{grid-template-columns:1fr !important}.hero{padding:40px 0 20px}.analyzer{padding:20px}.email-row{flex-direction:column}}
 
 /* Upgrade Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -230,16 +230,22 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
 <section class="pricing" id="pricing">
   <h2>Simple pricing</h2>
   <p>Less than one awkward HR meeting.</p>
-  <div class="cards">
+  <div class="cards" style="grid-template-columns:1fr 1fr 1fr;max-width:860px">
     <div class="pcard">
       <div class="tier">Free</div>
       <div class="price">₹0</div>
-      <ul><li>5 scans total</li><li>Full AI roasts</li><li>Professional rewrites</li><li>No sign-up needed</li></ul>
+      <ul><li>5 scans/day</li><li>Full AI roasts</li><li>Professional rewrites</li><li>No sign-up needed</li></ul>
     </div>
     <div class="pcard pro">
       <div class="tier">Pro</div>
-      <div class="price">₹199<small>/month</small></div>
-      <ul><li>Unlimited scans</li><li>Unlimited roasts</li><li>Priority analysis</li><li>Cancel anytime</li></ul>
+      <div class="price">₹299<small>/month</small></div>
+      <ul><li>30 scans/day</li><li>Full AI roasts</li><li>Professional rewrites</li><li>Cancel anytime</li></ul>
+    </div>
+    <div class="pcard" style="border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.04)">
+      <div class="tier" style="color:#22C55E">Teams</div>
+      <div class="price">₹199<small>/user/mo</small></div>
+      <ul><li>30 scans/day per user</li><li>5+ team members</li><li>Team leaderboard</li><li>One billing admin</li><li>Priority support</li></ul>
+      <a href="mailto:abhishekmusale2027@gmail.com?subject=UnHinged%20Teams&body=Hi%2C%20I%27m%20interested%20in%20UnHinged%20Teams%20for%20my%20team%20of%20____%20people." style="display:block;margin-top:14px;text-align:center;color:#22C55E;font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(34,197,94,.3);padding:10px;border-radius:8px">Contact for Teams →</a>
     </div>
   </div>
 </section>
@@ -271,16 +277,16 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
         <div class="plan-name">Monthly <span class="badge" style="display:none" id="badgeMonthly">POPULAR</span></div>
         <div style="width:18px;height:18px;border-radius:50%;border:2px solid #FF5C00;display:flex;align-items:center;justify-content:center" id="radioMonthly"><div style="width:8px;height:8px;border-radius:50%;background:#FF5C00"></div></div>
       </div>
-      <div class="plan-price">₹199<span style="font-size:14px;color:#71717A;font-weight:400">/month</span></div>
+      <div class="plan-price">₹299<span style="font-size:14px;color:#71717A;font-weight:400">/month</span></div>
       <div class="plan-desc">30 scans/day · Cancel anytime</div>
     </div>
 
     <div class="plan-card" id="planYearly" onclick="selectPlan('yearly')">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="plan-name">Yearly <span class="badge">SAVE ₹889</span></div>
+        <div class="plan-name">Yearly <span class="badge">SAVE ₹1,089</span></div>
         <div style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center" id="radioYearly"></div>
       </div>
-      <div class="plan-price">₹1,499<span style="font-size:14px;color:#71717A;font-weight:400">/year</span></div>
+      <div class="plan-price">₹2,499<span style="font-size:14px;color:#71717A;font-weight:400">/year</span></div>
       <div class="plan-desc">30 scans/day · ₹125/month · Best value</div>
     </div>
 
@@ -299,7 +305,7 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
     </div>
 
     <button onclick="doUpgradeFromModal()" id="modalPayBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 20px rgba(255,92,0,.35)">
-      🔥 Start Pro — ₹199/month
+      🔥 Start Pro — ₹299/month
     </button>
     <div style="text-align:center;margin-top:10px;font-size:11px;color:#52525B">
       Secured by Razorpay · UPI, Cards, Netbanking accepted
@@ -542,8 +548,8 @@ function showPaywall() {
   box.innerHTML = `
     <div style="font-size:28px;margin-bottom:10px">⚡</div>
     <h3 style="font-size:18px;font-weight:800;margin-bottom:8px">Free trial complete</h3>
-    <p style="font-size:13px;color:#A1A1AA;margin-bottom:18px;line-height:1.6">You've used all 5 free roasts.<br>Upgrade to <b style="color:#FF5C00">UnHinged Pro</b> for unlimited scans.<br><span style="color:#71717A;font-size:12px">₹199/month · Cancel anytime</span></p>
-    <button onclick="doUpgrade()" style="width:100%;padding:15px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 20px rgba(255,92,0,.4)">🔥 Upgrade to Pro — ₹199/month</button>
+    <p style="font-size:13px;color:#A1A1AA;margin-bottom:18px;line-height:1.6">You've used all 5 free roasts.<br>Upgrade to <b style="color:#FF5C00">UnHinged Pro</b> for unlimited scans.<br><span style="color:#71717A;font-size:12px">₹299/month · Cancel anytime</span></p>
+    <button onclick="doUpgrade()" style="width:100%;padding:15px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 20px rgba(255,92,0,.4)">🔥 Upgrade to Pro — ₹299/month</button>
     <div style="margin-top:10px;font-size:12px;color:#52525B">Already upgraded? <a onclick="checkProStatus()" style="color:#FF5C00;cursor:pointer">Click here to activate</a></div>
   `;
   document.getElementById("analyzer").appendChild(box);
@@ -574,11 +580,11 @@ async function doUpgrade() {
       window.open(d.payment_link, "_blank");
       if (btn) { btn.textContent = "Complete payment in new tab"; btn.disabled = false; }
     } else {
-      if (btn) { btn.textContent = "🔥 Upgrade to Pro — ₹199/month"; btn.disabled = false; }
+      if (btn) { btn.textContent = "🔥 Upgrade to Pro — ₹299/month"; btn.disabled = false; }
       alert(d.message || "Payment error. Try again.");
     }
   } catch(e) {
-    if (btn) { btn.textContent = "🔥 Upgrade to Pro — ₹199/month"; btn.disabled = false; }
+    if (btn) { btn.textContent = "🔥 Upgrade to Pro — ₹299/month"; btn.disabled = false; }
     alert("Network error. Try again.");
   }
 }
@@ -652,7 +658,7 @@ function selectPlan(plan) {
     radioM.style.borderColor = "#FF5C00";
     radioY.innerHTML = "";
     radioY.style.borderColor = "rgba(255,255,255,.2)";
-    btn.textContent = "🔥 Start Pro — ₹199/month";
+    btn.textContent = "🔥 Start Pro — ₹299/month";
   } else {
     yearly.className = "plan-card selected";
     monthly.className = "plan-card";
@@ -660,7 +666,7 @@ function selectPlan(plan) {
     radioY.style.borderColor = "#FF5C00";
     radioM.innerHTML = "";
     radioM.style.borderColor = "rgba(255,255,255,.2)";
-    btn.textContent = "🔥 Start Pro — ₹1,499/year";
+    btn.textContent = "🔥 Start Pro — ₹2,499/year";
   }
 }
 
@@ -699,12 +705,12 @@ async function doUpgradeFromModal() {
       btn.textContent = "✓ Complete payment in new tab";
       btn.disabled = false;
     } else {
-      btn.textContent = selectedPlan === "monthly" ? "🔥 Start Pro — ₹199/month" : "🔥 Start Pro — ₹1,499/year";
+      btn.textContent = selectedPlan === "monthly" ? "🔥 Start Pro — ₹299/month" : "🔥 Start Pro — ₹2,499/year";
       btn.disabled = false;
       alert(d.message || "Payment error. Please try again.");
     }
   } catch(e) {
-    btn.textContent = selectedPlan === "monthly" ? "🔥 Start Pro — ₹199/month" : "🔥 Start Pro — ₹1,499/year";
+    btn.textContent = selectedPlan === "monthly" ? "🔥 Start Pro — ₹299/month" : "🔥 Start Pro — ₹2,499/year";
     btn.disabled = false;
     alert("Network error. Try again.");
   }
