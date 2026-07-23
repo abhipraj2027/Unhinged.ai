@@ -253,6 +253,10 @@ async function loadTeams(){
         <span style="font-size:11px;color:#71717A">${t.member_count}/${t.seats} seats</span>
       </div>
       <div style="font-size:11px;color:#71717A;margin-top:4px">Owner: ${t.owner_email}</div>
+      <div style="margin-top:8px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center">
+        <div><span style="font-size:10px;color:#71717A;letter-spacing:.1em;text-transform:uppercase">Invite Code:</span> <span style="font-size:16px;font-weight:900;letter-spacing:.3em;color:#22C55E;font-family:JetBrains Mono,monospace">${t.invite_code||'N/A'}</span></div>
+        <button class="btn ghost" style="font-size:10px;padding:4px 10px" onclick="navigator.clipboard.writeText('${t.invite_code||''}');toast('Code copied!')">Copy</button>
+      </div>
       <div style="margin-top:8px;display:flex;gap:6px">
         <input id="addEmail${t.id}" placeholder="add@email.com" style="margin:0;flex:1;font-size:11px;padding:6px 8px">
         <button class="btn ghost" style="font-size:10px;padding:6px 10px" onclick="addToTeam(${t.id})">Add</button>
