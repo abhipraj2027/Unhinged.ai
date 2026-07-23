@@ -227,7 +227,10 @@ def create_team(name, owner_email, seats=5):
         team = db.execute("SELECT * FROM teams WHERE owner_email=? ORDER BY id DESC LIMIT 1", (owner_email,)).fetchone()
         team_id = team["id"]
         db.execute("INSERT OR IGNORE INTO team_members(team_id,email,role) VALUES(?,?,?)", (team_id, owner_email, "owner"))
-        get_or_create(owner_email)
+        # Create user if not exists (inline, no nested connection)
+        existing = db.execute("SELECT id FROM users WHERE email=?", (owner_email,)).fetchone()
+        if not existing:
+            db.execute("INSERT INTO users(email) VALUES(?)", (owner_email,))
         db.execute("UPDATE users SET is_pro=1, expires_at=? WHERE email=?", (time.time()+365*86400, owner_email))
         return dict(team)
 
@@ -239,7 +242,9 @@ def add_team_member(team_id, email):
         current = db.execute("SELECT COUNT(*) c FROM team_members WHERE team_id=?", (team_id,)).fetchone()["c"]
         if current >= team["seats"]: return {"error": f"Team full ({team['seats']} seats)"}
         db.execute("INSERT OR IGNORE INTO team_members(team_id,email,role) VALUES(?,?,?)", (team_id, email, "member"))
-        get_or_create(email)
+        existing = db.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
+        if not existing:
+            db.execute("INSERT INTO users(email) VALUES(?)", (email,))
         db.execute("UPDATE users SET is_pro=1, expires_at=? WHERE email=?", (time.time()+365*86400, email))
         return {"success": True, "email": email}
 
@@ -293,7 +298,9 @@ def join_team_by_code(email, invite_code):
         existing = db.execute("SELECT id FROM team_members WHERE team_id=? AND email=?", (team["id"], email)).fetchone()
         if existing: return {"error": "Already on this team"}
         db.execute("INSERT INTO team_members(team_id,email,role) VALUES(?,?,?)", (team["id"], email, "member"))
-        get_or_create(email)
+        existing = db.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
+        if not existing:
+            db.execute("INSERT INTO users(email) VALUES(?)", (email,))
         db.execute("UPDATE users SET is_pro=1, expires_at=? WHERE email=?", (time.time()+365*86400, email))
         return {"success": True, "team_name": team["name"]}
 
