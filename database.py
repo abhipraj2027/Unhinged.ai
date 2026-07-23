@@ -161,15 +161,22 @@ def get_stats():
         recent = db.execute("SELECT email,scans_used,last_scan_at,is_pro FROM users WHERE last_scan_at IS NOT NULL ORDER BY last_scan_at DESC LIMIT 10").fetchall()
         return {"total_users":total,"pro_users":pro,"total_scans":scans,"active_today":today,"recent":[dict(r) for r in recent]}
 
-# ── Auth helpers ──────────────────────────────────────────────
+# ── Auth helpers (bcrypt + JWT) ────────────────────────────────
 
-def _hash_pw(pw):
-    import hashlib
-    return hashlib.sha256(pw.encode()).hexdigest()
+from passlib.hash import bcrypt as _bcrypt
+
+def hash_password(pw):
+    return _bcrypt.hash(pw)
+
+def verify_password(pw, hashed):
+    try:
+        return _bcrypt.verify(pw, hashed)
+    except Exception:
+        return False
 
 def set_password(email, password):
     email = email.strip().lower()
-    h = _hash_pw(password)
+    h = hash_password(password)
     get_or_create(email)
     with get_db() as db:
         db.execute("UPDATE users SET password_hash=? WHERE email=?", (h, email))
@@ -178,14 +185,33 @@ def check_password(email, password):
     email = email.strip().lower()
     with get_db() as db:
         r = db.execute("SELECT password_hash FROM users WHERE email=?", (email,)).fetchone()
-        if not r or not r["password_hash"]: return False
-        return r["password_hash"] == _hash_pw(password)
+        if not r or not r["password_hash"]:
+            return False
+        return verify_password(password, r["password_hash"])
 
 def has_password(email):
     email = email.strip().lower()
     with get_db() as db:
         r = db.execute("SELECT password_hash FROM users WHERE email=?", (email,)).fetchone()
         return bool(r and r["password_hash"])
+
+def get_user_profile(email):
+    email = email.strip().lower()
+    user = get_user(email)
+    if not user: return None
+    user = reset_daily(email) or user
+    team = get_team_for_email(email)
+    return {
+        "email": email,
+        "is_pro": bool(user.get("is_pro")),
+        "scans_used": user.get("scans_used", 0),
+        "daily_scans": user.get("daily_scans", 0),
+        "scans_remaining": remaining(user),
+        "daily_limit": limit_for(user),
+        "team": dict(team) if team else None,
+        "expires_at": user.get("expires_at"),
+        "created_at": user.get("created_at"),
+    }
 
 # ── Team helpers ──────────────────────────────────────────────
 

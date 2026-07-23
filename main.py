@@ -193,11 +193,35 @@ async def verify_pay(body: VerifyReq):
     db.set_pro(body.email, body.razorpay_subscription_id, body.razorpay_payment_id)
     return {"success":True,"is_pro":True}
 
-# -- Auth --
+# -- Auth (JWT + bcrypt) --
+import jwt as pyjwt
+JWT_SECRET = os.getenv("SECRET_KEY", "unhinged-secret")
+JWT_ALGO = "HS256"
+JWT_EXP = 30 * 86400  # 30 days
+
+def _make_token(email):
+    import time as _t
+    return pyjwt.encode({"email": email, "exp": _t.time() + JWT_EXP, "iat": _t.time()}, JWT_SECRET, algorithm=JWT_ALGO)
+
+def _get_current_user(request: Request):
+    token = request.cookies.get("auth_token") or ""
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+    if not token:
+        return None
+    try:
+        data = pyjwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+        return data.get("email")
+    except pyjwt.ExpiredSignatureError:
+        return None
+    except pyjwt.InvalidTokenError:
+        return None
+
 class SignupReq(BaseModel):
     email: str
     password: str
-    name: str = ""
 
 class LoginReq(BaseModel):
     email: str
@@ -211,68 +235,65 @@ class JoinTeamReq(BaseModel):
 @app.post("/api/auth/signup")
 async def signup(body: SignupReq):
     email = body.email.strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(400, "Invalid email")
     if len(body.password) < 6:
         raise HTTPException(400, "Password must be at least 6 characters")
     if db.has_password(email):
-        raise HTTPException(400, "Account already exists. Login instead.")
+        raise HTTPException(409, "Account already exists. Please login.")
     db.get_or_create(email)
     db.set_password(email, body.password)
-    token = signer.dumps({"email": email, "type": "user"})
-    resp = JSONResponse({"success": True, "email": email, "is_pro": bool(db.get_user(email).get("is_pro"))})
-    resp.set_cookie("user_token", token, httponly=True, samesite="lax", max_age=30*86400)
+    token = _make_token(email)
+    profile = db.get_user_profile(email)
+    resp = JSONResponse({"success": True, **profile})
+    resp.set_cookie("auth_token", token, httponly=True, samesite="lax", secure=True, max_age=JWT_EXP)
     return resp
 
 @app.post("/api/auth/login")
 async def login(body: LoginReq):
     email = body.email.strip().lower()
     if not db.check_password(email, body.password):
-        raise HTTPException(401, "Wrong email or password")
-    user = db.get_user(email)
-    user = db.reset_daily(email) or user
-    team = db.get_team_for_email(email)
-    token = signer.dumps({"email": email, "type": "user"})
-    resp = JSONResponse({
-        "success": True,
-        "email": email,
-        "is_pro": bool(user.get("is_pro")),
-        "team": team.get("name") if team else None,
-        "scans_remaining": db.remaining(user),
-        "daily_limit": db.limit_for(user),
-    })
-    resp.set_cookie("user_token", token, httponly=True, samesite="lax", max_age=30*86400)
+        raise HTTPException(401, "Invalid email or password")
+    token = _make_token(email)
+    profile = db.get_user_profile(email)
+    resp = JSONResponse({"success": True, **profile})
+    resp.set_cookie("auth_token", token, httponly=True, samesite="lax", secure=True, max_age=JWT_EXP)
     return resp
 
 @app.get("/api/auth/me")
 async def auth_me(request: Request):
-    try:
-        data = signer.loads(request.cookies.get("user_token", ""))
-        email = data.get("email", "")
-    except:
-        return JSONResponse(status_code=401, content={"error": "Not logged in"})
-    user = db.get_user(email)
-    if not user:
-        return JSONResponse(status_code=401, content={"error": "User not found"})
-    user = db.reset_daily(email) or user
-    team = db.get_team_for_email(email)
-    return {
-        "email": email,
-        "is_pro": bool(user.get("is_pro")),
-        "team": team.get("name") if team else None,
-        "team_id": team.get("id") if team else None,
-        "scans_remaining": db.remaining(user),
-        "daily_limit": db.limit_for(user),
-    }
+    email = _get_current_user(request)
+    if not email:
+        return JSONResponse(status_code=401, content={"error": "Not authenticated"})
+    profile = db.get_user_profile(email)
+    if not profile:
+        return JSONResponse(status_code=401, content={"error": "Account not found"})
+    return profile
 
 @app.post("/api/auth/logout")
 async def logout():
     resp = JSONResponse({"success": True})
-    resp.delete_cookie("user_token")
+    resp.delete_cookie("auth_token")
     return resp
+
+@app.post("/api/auth/change-password")
+async def change_password(request: Request):
+    email = _get_current_user(request)
+    if not email:
+        raise HTTPException(401, "Not authenticated")
+    body = await request.json()
+    old_pw = body.get("old_password", "")
+    new_pw = body.get("new_password", "")
+    if not db.check_password(email, old_pw):
+        raise HTTPException(400, "Current password is wrong")
+    if len(new_pw) < 6:
+        raise HTTPException(400, "New password must be at least 6 characters")
+    db.set_password(email, new_pw)
+    return {"success": True}
 
 @app.post("/api/teams/join")
 async def join_team(body: JoinTeamReq):
     email = body.email.strip().lower()
-    # Create account if needed
     if not db.has_password(email):
         if len(body.password) < 6:
             raise HTTPException(400, "Password must be at least 6 characters")
@@ -280,18 +301,32 @@ async def join_team(body: JoinTeamReq):
         db.set_password(email, body.password)
     else:
         if not db.check_password(email, body.password):
-            raise HTTPException(401, "Wrong password for existing account")
+            raise HTTPException(401, "Wrong password for this account")
     result = db.join_team_by_code(email, body.invite_code.strip().upper())
     if result.get("error"):
         raise HTTPException(400, result["error"])
-    token = signer.dumps({"email": email, "type": "user"})
+    token = _make_token(email)
     resp = JSONResponse({"success": True, "team_name": result.get("team_name"), "is_pro": True})
-    resp.set_cookie("user_token", token, httponly=True, samesite="lax", max_age=30*86400)
+    resp.set_cookie("auth_token", token, httponly=True, samesite="lax", secure=True, max_age=JWT_EXP)
     return resp
+
+# Extension auth — returns token for chrome.storage
+@app.post("/api/auth/extension-login")
+async def ext_login(body: LoginReq):
+    email = body.email.strip().lower()
+    if not db.check_password(email, body.password):
+        raise HTTPException(401, "Invalid email or password")
+    token = _make_token(email)
+    profile = db.get_user_profile(email)
+    return {"success": True, "token": token, **profile}
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/account", response_class=HTMLResponse)
+async def account_page(request: Request):
+    return templates.TemplateResponse("account.html", {"request": request})
 
 # -- Teams --
 class TeamCreateReq(BaseModel):
