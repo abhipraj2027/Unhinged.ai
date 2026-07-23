@@ -240,31 +240,37 @@ function toast(msg,type){
 
 // Teams management
 async function loadTeams(){
+  var el=document.getElementById('teamsList');
   try{
-  const tr=await fetch(`${API}/api/teams/list`,{credentials:'include'});
-  if(!tr.ok){document.getElementById('teamsList').innerHTML='<div style="color:#52525B">No teams yet</div>';return}
-  const teams=await tr.json();
-  if(!Array.isArray(teams)||!teams.length){document.getElementById('teamsList').innerHTML='<div style="color:#52525B">No teams yet</div>';return}
-  let html='';
-  for(const t of teams){
-    html+=`<div style="background:rgba(0,0,0,.3);border-radius:8px;padding:12px;margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><strong style="color:#22C55E">${t.name}</strong> <span style="color:#52525B;font-size:11px">ID: ${t.id}</span></div>
-        <span style="font-size:11px;color:#71717A">${t.member_count}/${t.seats} seats</span>
-      </div>
-      <div style="font-size:11px;color:#71717A;margin-top:4px">Owner: ${t.owner_email}</div>
-      <div style="margin-top:8px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center">
-        <div><span style="font-size:10px;color:#71717A;letter-spacing:.1em;text-transform:uppercase">Invite Code:</span> <span style="font-size:16px;font-weight:900;letter-spacing:.3em;color:#22C55E;font-family:JetBrains Mono,monospace">${t.invite_code||'N/A'}</span></div>
-        <button class="btn ghost" style="font-size:10px;padding:4px 10px" onclick="navigator.clipboard.writeText('${t.invite_code||''}');toast('Code copied!')">Copy</button>
-      </div>
-      <div style="margin-top:8px;display:flex;gap:6px">
-        <input id="addEmail${t.id}" placeholder="add@email.com" style="margin:0;flex:1;font-size:11px;padding:6px 8px">
-        <button class="btn ghost" style="font-size:10px;padding:6px 10px" onclick="addToTeam(${t.id})">Add</button>
-      </div>
-    </div>`;
+    var tr=await fetch(API+'/api/teams/list',{credentials:'include'});
+    if(!tr.ok){el.innerHTML='<div style="color:#52525B">No teams yet ('+tr.status+')</div>';return}
+    var text=await tr.text();
+    var teams;
+    try{teams=JSON.parse(text)}catch(pe){el.innerHTML='<div style="color:#52525B">No teams yet</div>';return}
+    if(!Array.isArray(teams)||teams.length===0){el.innerHTML='<div style="color:#52525B">No teams yet</div>';return}
+    var html='';
+    for(var i=0;i<teams.length;i++){
+      var t=teams[i];
+      var code=t.invite_code||'N/A';
+      html+='<div style="background:rgba(0,0,0,.3);border-radius:8px;padding:12px;margin-bottom:8px">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+      html+='<div><strong style="color:#22C55E">'+t.name+'</strong> <span style="color:#52525B;font-size:11px">ID: '+t.id+'</span></div>';
+      html+='<span style="font-size:11px;color:#71717A">'+t.member_count+'/'+t.seats+' seats</span>';
+      html+='</div>';
+      html+='<div style="font-size:11px;color:#71717A;margin-top:4px">Owner: '+t.owner_email+'</div>';
+      html+='<div style="margin-top:8px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center">';
+      html+='<div><span style="font-size:10px;color:#71717A;letter-spacing:.1em;text-transform:uppercase">INVITE CODE: </span><span style="font-size:18px;font-weight:900;letter-spacing:.3em;color:#22C55E;font-family:JetBrains Mono,monospace">'+code+'</span></div>';
+      html+='</div>';
+      html+='<div style="margin-top:8px;display:flex;gap:6px">';
+      html+='<input id="addEmail'+t.id+'" placeholder="add@email.com" style="margin:0;flex:1;font-size:11px;padding:6px 8px">';
+      html+='<button class="btn ghost" style="font-size:10px;padding:6px 10px" onclick="addToTeam('+t.id+')">Add</button>';
+      html+='</div></div>';
+    }
+    el.innerHTML=html;
+  }catch(e){
+    el.innerHTML='<div style="color:#EF4444;font-size:12px">Error loading teams: '+e.message+'</div>';
+    console.error('loadTeams:',e);
   }
-  document.getElementById('teamsList').innerHTML=html;
-  }catch(e){document.getElementById('teamsList').innerHTML='<div style="color:#52525B">No teams yet</div>';console.error('loadTeams error:',e)}
 }
 
 async function createTeam(){
