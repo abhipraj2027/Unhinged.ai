@@ -202,13 +202,30 @@ async function saveRewrite(){
 }
 
 async function loadStats(){
-  const r=await fetch(`${API}/admin/stats`,{credentials:'include'});
-  if(!r.ok)return;
-  const s=await r.json();
-  document.getElementById('sTotal').textContent=s.total_users;
-  document.getElementById('sPro').textContent=s.pro_users;
-  document.getElementById('sScans').textContent=s.total_scans;
-  document.getElementById('sToday').textContent=s.active_today;
+  try{
+    const r=await fetch(API+'/admin/stats',{credentials:'include'});
+    if(!r.ok){console.error('Stats error:',r.status);return}
+    const s=await r.json();
+    document.getElementById('sTotal').textContent=s.total_users||0;
+    document.getElementById('sPro').textContent=s.pro_users||0;
+    document.getElementById('sScans').textContent=s.total_scans||0;
+    document.getElementById('sToday').textContent=s.active_today||0;
+    // Show recent users
+    if(s.recent&&s.recent.length>0){
+      var rhtml='<div style="margin-top:12px;border-top:1px solid rgba(255,255,255,.06);padding-top:12px"><div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#71717A;margin-bottom:8px;font-family:JetBrains Mono,monospace">Recent Users</div>';
+      for(var i=0;i<s.recent.length;i++){
+        var u=s.recent[i];
+        var pro=u.is_pro?'<span style="background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;padding:1px 6px;border-radius:99px;font-size:9px;font-weight:700;margin-left:6px">PRO</span>':'';
+        rhtml+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px"><span style="font-family:JetBrains Mono,monospace;color:#A1A1AA">'+u.email+pro+'</span><span style="color:#52525B">'+u.scans_used+' scans</span></div>';
+      }
+      rhtml+='</div>';
+      var statsGrid=document.getElementById('statsGrid');
+      var existing=document.getElementById('recentUsers');
+      if(existing)existing.remove();
+      var div=document.createElement("div");div.id="recentUsers";div.innerHTML=rhtml;
+      statsGrid.parentNode.insertBefore(div,statsGrid.nextSibling.nextSibling);
+    }
+  }catch(e){console.error('loadStats error:',e)}
 }
 
 async function loadEnv(){
@@ -274,24 +291,37 @@ async function loadTeams(){
 }
 
 async function createTeam(){
-  const name=document.getElementById('newTeamName').value.trim();
-  const owner=document.getElementById('newTeamOwner').value.trim();
-  const seats=parseInt(document.getElementById('newTeamSeats').value)||5;
+  var name=document.getElementById('newTeamName').value.trim();
+  var owner=document.getElementById('newTeamOwner').value.trim();
+  var seats=parseInt(document.getElementById('newTeamSeats').value)||5;
   if(!name||!owner)return toast('Fill team name and owner email','err');
-  const r=await fetch(`${API}/api/teams/create`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,owner_email:owner,seats})});
-  if(r.ok){toast('Team created!');loadTeams();document.getElementById('newTeamName').value='';document.getElementById('newTeamOwner').value='';}
-  else toast('Failed to create team','err');
+  try{
+    var r=await fetch(API+'/api/teams/create',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,owner_email:owner,seats:seats})});
+    var d=await r.json();
+    if(r.ok&&d.success){
+      toast('Team created! Invite code: '+(d.team&&d.team.invite_code||'check below'));
+      document.getElementById('newTeamName').value='';
+      document.getElementById('newTeamOwner').value='';
+      loadTeams();
+      loadStats();
+    }else{
+      toast('Failed: '+(d.detail||d.message||d.error||JSON.stringify(d)),'err');
+    }
+  }catch(e){toast('Error: '+e.message,'err')}
 }
 
 async function addToTeam(teamId){
-  const email=document.getElementById('addEmail'+teamId).value.trim();
+  var email=document.getElementById('addEmail'+teamId).value.trim();
   if(!email)return;
-  const r=await fetch(`${API}/api/teams/add-member`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({team_id:teamId,email})});
-  const d=await r.json();
-  if(d.error)return toast(d.error,'err');
-  toast(email+' added!');
-  document.getElementById('addEmail'+teamId).value='';
-  loadTeams();
+  try{
+    var r=await fetch(API+'/api/teams/add-member',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({team_id:teamId,email:email})});
+    var d=await r.json();
+    if(d.error)return toast(d.error,'err');
+    toast(email+' added!');
+    document.getElementById('addEmail'+teamId).value='';
+    loadTeams();
+    loadStats();
+  }catch(e){toast('Error: '+e.message,'err')}
 }
 
 // loadTeams called in auto-login above
