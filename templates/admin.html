@@ -139,7 +139,7 @@ let authed = false;
 
 // Check if already authenticated
 fetch(`${API}/admin/config`,{credentials:'include'}).then(r=>{
-  if(r.ok){showApp();return r.json().then(loadConfig)}
+  if(r.ok){showApp();r.json().then(c=>{loadConfig(c);loadStats();loadEnv();loadTeams();})}
 }).catch(()=>{});
 
 async function doLogin(){
@@ -294,7 +294,7 @@ async function addToTeam(teamId){
   loadTeams();
 }
 
-if(authed)loadTeams();
+// loadTeams called in auto-login above
 </script>
 </body>
 </html>
