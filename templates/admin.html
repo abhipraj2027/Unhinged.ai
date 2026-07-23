@@ -240,12 +240,11 @@ function toast(msg,type){
 
 // Teams management
 async function loadTeams(){
-  const r=await fetch(`${API}/admin/config`,{credentials:'include'});
-  if(!r.ok)return;
+  try{
   const tr=await fetch(`${API}/api/teams/list`,{credentials:'include'});
   if(!tr.ok){document.getElementById('teamsList').innerHTML='<div style="color:#52525B">No teams yet</div>';return}
   const teams=await tr.json();
-  if(!teams.length){document.getElementById('teamsList').innerHTML='<div style="color:#52525B">No teams yet</div>';return}
+  if(!Array.isArray(teams)||!teams.length){document.getElementById('teamsList').innerHTML='<div style="color:#52525B">No teams yet</div>';return}
   let html='';
   for(const t of teams){
     html+=`<div style="background:rgba(0,0,0,.3);border-radius:8px;padding:12px;margin-bottom:8px">
@@ -261,6 +260,7 @@ async function loadTeams(){
     </div>`;
   }
   document.getElementById('teamsList').innerHTML=html;
+  }catch(e){document.getElementById('teamsList').innerHTML='<div style="color:#52525B">No teams yet</div>';console.error('loadTeams error:',e)}
 }
 
 async function createTeam(){
