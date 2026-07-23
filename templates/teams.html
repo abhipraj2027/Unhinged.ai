@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UnHinged Teams — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0A0A0A;color:#E4E4E7;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:800px;margin:0 auto;padding:24px}
+h1{font-size:24px;font-weight:900;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.sub{font-size:13px;color:#71717A;margin-bottom:28px}
+.section{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:20px 24px;margin-bottom:20px}
+h2{font-size:15px;font-weight:700;margin-bottom:14px;color:#22C55E;letter-spacing:.02em}
+h2.orange{color:#FF5C00}
+label{display:block;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#71717A;margin-bottom:6px;font-family:'JetBrains Mono',monospace}
+input{width:100%;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:13px;margin-bottom:12px;outline:none}
+input:focus{border-color:#22C55E}
+.btn{background:#22C55E;color:#000;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;transition:transform .12s}
+.btn:hover{transform:translateY(-1px)}
+.btn.sm{padding:6px 12px;font-size:11px}
+.btn.red{background:#EF4444}
+.btn.orange{background:linear-gradient(135deg,#FF5C00,#FF3B30)}
+/* Email gate */
+.gate{text-align:center;padding:40px 20px}
+.gate p{color:#A1A1AA;margin-bottom:16px;font-size:14px}
+.gate input{max-width:320px;display:inline-block;text-align:center}
+/* Leaderboard */
+.lb-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.lb-row:last-child{border:none}
+.lb-rank{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+.lb-rank.g{background:linear-gradient(135deg,#FFD700,#FFA500);color:#000}
+.lb-rank.s{background:linear-gradient(135deg,#C0C0C0,#A0A0A0);color:#000}
+.lb-rank.b{background:linear-gradient(135deg,#CD7F32,#A0522D);color:#000}
+.lb-email{flex:1;margin:0 12px;font-size:13px;font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis}
+.lb-score{font-size:20px;font-weight:900;letter-spacing:-.02em}
+.lb-meta{font-size:10px;color:#71717A;text-align:right;font-family:'JetBrains Mono',monospace}
+/* Member list */
+.member{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.member:last-child{border:none}
+.member-email{font-size:13px;font-family:'JetBrains Mono',monospace}
+.member-role{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.role-owner{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000}
+.role-member{background:rgba(255,255,255,.06);color:#A1A1AA}
+.no-team{text-align:center;padding:60px 20px}
+.no-team h2{color:#FF5C00;font-size:20px;margin-bottom:12px}
+.no-team p{color:#71717A;font-size:14px;margin-bottom:20px;line-height:1.6}
+a{color:#FF5C00;text-decoration:none}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#000;border:1px solid rgba(255,255,255,.1);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;opacity:0;transition:all .2s;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🔥 UnHinged Teams</h1>
+<div class="sub">Team leaderboard & member management</div>
+
+<!-- Email gate -->
+<div class="gate" id="gate">
+  <p>Enter your work email to access your team dashboard</p>
+  <input type="email" id="gateEmail" placeholder="you@company.com">
+  <br><br>
+  <button class="btn" onclick="loadTeam()">Open Dashboard</button>
+</div>
+
+<!-- No team -->
+<div class="no-team" id="noTeam" style="display:none">
+  <h2>No team found</h2>
+  <p>This email isn't part of any UnHinged team yet.<br>Ask your team admin to add you, or <a href="mailto:abhishekmusale2027@gmail.com?subject=UnHinged%20Teams">contact us</a> to set up a team.</p>
+  <a href="/" class="btn orange">← Back to UnHinged</a>
+</div>
+
+<!-- Dashboard (hidden until team found) -->
+<div id="dashboard" style="display:none">
+
+  <!-- Leaderboard -->
+  <div class="section">
+    <h2>🏆 Most Unhinged This Week</h2>
+    <div id="leaderboard"><div style="text-align:center;color:#52525B;padding:20px">No scans yet this week</div></div>
+  </div>
+
+  <!-- Team info -->
+  <div class="section">
+    <h2 class="orange">👥 Team Members</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div id="teamName" style="font-size:16px;font-weight:700"></div>
+      <div id="seatCount" style="font-size:11px;color:#71717A;font-family:'JetBrains Mono',monospace"></div>
+    </div>
+    <div id="members"></div>
+
+    <!-- Add member (owner only) -->
+    <div id="addMemberBox" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
+      <label>Add team member</label>
+      <div style="display:flex;gap:8px">
+        <input type="email" id="newMemberEmail" placeholder="colleague@company.com" style="margin:0">
+        <button class="btn sm" onclick="addMember()">Add</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+const API = window.location.origin;
+let teamData = null;
+let myEmail = "";
+
+document.getElementById("gateEmail").addEventListener("keydown", e => { if(e.key==="Enter") loadTeam(); });
+
+async function loadTeam() {
+  myEmail = document.getElementById("gateEmail").value.trim().toLowerCase();
+  if (!myEmail || !myEmail.includes("@")) return;
+
+  try {
+    const r = await fetch(API + "/api/teams/my-team?email=" + encodeURIComponent(myEmail));
+    const d = await r.json();
+
+    document.getElementById("gate").style.display = "none";
+
+    if (!d.has_team) {
+      document.getElementById("noTeam").style.display = "block";
+      return;
+    }
+
+    teamData = d;
+    document.getElementById("dashboard").style.display = "block";
+    renderDashboard(d);
+  } catch(e) {
+    toast("Failed to load. Try again.");
+  }
+}
+
+function renderDashboard(d) {
+  const team = d.team;
+  const members = d.members;
+  const lb = d.leaderboard;
+
+  document.getElementById("teamName").textContent = team.name;
+  document.getElementById("seatCount").textContent = members.length + "/" + team.seats + " seats";
+
+  // Leaderboard
+  const lbEl = document.getElementById("leaderboard");
+  if (lb && lb.length > 0) {
+    let html = "";
+    lb.forEach((entry, i) => {
+      const rankClass = i === 0 ? "g" : i === 1 ? "s" : i === 2 ? "b" : "";
+      const crown = i === 0 ? " 👑" : "";
+      const scoreColor = entry.avg_score < 4 ? "#22C55E" : entry.avg_score < 8 ? "#FACC15" : "#EF4444";
+      html += '<div class="lb-row">';
+      html += '<div class="lb-rank ' + rankClass + '">' + (i+1) + '</div>';
+      html += '<div class="lb-email">' + entry.email.replace(/@.*/, "@...") + crown + '</div>';
+      html += '<div style="text-align:right"><div class="lb-score" style="color:' + scoreColor + '">' + entry.avg_score + '</div>';
+      html += '<div class="lb-meta">avg · ' + entry.total_scans + ' scans · max ' + entry.max_score + '</div></div>';
+      html += '</div>';
+    });
+    lbEl.innerHTML = html;
+  }
+
+  // Members
+  const memEl = document.getElementById("members");
+  let mhtml = "";
+  members.forEach(m => {
+    const isOwner = m.role === "owner";
+    mhtml += '<div class="member">';
+    mhtml += '<div><div class="member-email">' + m.email + '</div><div style="font-size:10px;color:#52525B;margin-top:2px">' + m.scans_used + ' total scans</div></div>';
+    mhtml += '<div style="display:flex;align-items:center;gap:8px">';
+    mhtml += '<span class="member-role ' + (isOwner ? "role-owner" : "role-member") + '">' + m.role + '</span>';
+    if (!isOwner && team.owner_email === myEmail) {
+      mhtml += '<button class="btn sm red" onclick="removeMember(\'' + m.email + '\')">Remove</button>';
+    }
+    mhtml += '</div></div>';
+  });
+  memEl.innerHTML = mhtml;
+
+  // Show add member if owner
+  if (team.owner_email === myEmail) {
+    document.getElementById("addMemberBox").style.display = "block";
+  }
+}
+
+async function addMember() {
+  const email = document.getElementById("newMemberEmail").value.trim().toLowerCase();
+  if (!email || !email.includes("@")) return;
+  try {
+    const r = await fetch(API + "/api/teams/add-member", {
+      method: "POST", credentials: "include",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({team_id: teamData.team.id, email: email})
+    });
+    const d = await r.json();
+    if (d.error) return toast(d.error);
+    document.getElementById("newMemberEmail").value = "";
+    toast(email + " added!");
+    loadTeam();
+  } catch(e) { toast("Failed to add member."); }
+}
+
+async function removeMember(email) {
+  if (!confirm("Remove " + email + " from team?")) return;
+  try {
+    await fetch(API + "/api/teams/remove-member", {
+      method: "POST", credentials: "include",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({team_id: teamData.team.id, email: email})
+    });
+    toast(email + " removed.");
+    loadTeam();
+  } catch(e) { toast("Failed to remove."); }
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show";
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+</script>
+</body>
+</html>

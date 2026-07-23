@@ -108,6 +108,7 @@ async def analyze(body: AnalyzeReq):
         raise HTTPException(500, "Analysis failed. Please try again.")
     roast = parse_roast_json(roast_raw)
     db.inc_scan(email)
+    db.log_scan(email, roast.get("score", 5))
     user = db.get_or_create(email)
     user = db.reset_daily(email) or user
     return {"score":roast.get("score",5),"roast":roast.get("roast",""),"risk":roast.get("risk",""),"rewrite":rewrite_raw.strip(),"scans_used":user.get("scans_used",0),"daily_scans":user.get("daily_scans",0),"scans_remaining":db.remaining(user),"daily_limit":db.limit_for(user),"is_pro":bool(user.get("is_pro"))}
@@ -120,7 +121,13 @@ async def check_status(email: str):
     if not user:
         return {"email":email,"is_pro":False,"scans_used":0,"daily_scans":0,"scans_remaining":db.FREE_DAILY,"daily_limit":db.FREE_DAILY,"limit":db.FREE_DAILY}
     user = db.reset_daily(email) or user
-    return {"email":email,"is_pro":bool(user.get("is_pro")),"scans_used":user.get("scans_used",0),"daily_scans":user.get("daily_scans",0),"scans_remaining":db.remaining(user),"daily_limit":db.limit_for(user),"limit":db.limit_for(user),"expires_at":user.get("expires_at")}
+    team = db.get_team_for_email(email)
+    if team and not user.get("is_pro"):
+        db.get_or_create(email)
+        with db.get_db() as conn:
+            conn.execute("UPDATE users SET is_pro=1 WHERE email=?", (email,))
+        user["is_pro"] = 1
+    return {"email":email,"is_pro":bool(user.get("is_pro")),"team":team.get("name") if team else None,"scans_used":user.get("scans_used",0),"daily_scans":user.get("daily_scans",0),"scans_remaining":db.remaining(user),"daily_limit":db.limit_for(user),"limit":db.limit_for(user),"expires_at":user.get("expires_at")}
 
 # -- Razorpay --
 def _rz():
@@ -185,6 +192,61 @@ async def verify_pay(body: VerifyReq):
     except: raise HTTPException(400,"Verification failed")
     db.set_pro(body.email, body.razorpay_subscription_id, body.razorpay_payment_id)
     return {"success":True,"is_pro":True}
+
+# -- Teams --
+class TeamCreateReq(BaseModel):
+    name: str
+    owner_email: str
+    seats: int = 5
+
+class TeamMemberReq(BaseModel):
+    team_id: int
+    email: str
+
+@app.post("/api/teams/create")
+async def create_team(body: TeamCreateReq, request: Request):
+    if not _admin_ok(request): raise HTTPException(401)
+    team = db.create_team(body.name, body.owner_email, body.seats)
+    return {"success": True, "team": team}
+
+@app.post("/api/teams/add-member")
+async def add_member(body: TeamMemberReq, request: Request):
+    if not _admin_ok(request): raise HTTPException(401)
+    result = db.add_team_member(body.team_id, body.email)
+    return result
+
+@app.post("/api/teams/remove-member")
+async def remove_member(body: TeamMemberReq, request: Request):
+    if not _admin_ok(request): raise HTTPException(401)
+    return db.remove_team_member(body.team_id, body.email)
+
+@app.get("/api/teams/list")
+async def list_teams(request: Request):
+    if not _admin_ok(request): raise HTTPException(401)
+    return db.get_all_teams()
+
+@app.get("/api/teams/{team_id}/members")
+async def team_members(team_id: int, request: Request):
+    if not _admin_ok(request): raise HTTPException(401)
+    return db.get_team_members(team_id)
+
+@app.get("/api/teams/{team_id}/leaderboard")
+async def team_leaderboard(team_id: int, days: int = 7):
+    return db.get_leaderboard(team_id, days)
+
+@app.get("/api/teams/my-team")
+async def my_team(email: str):
+    email = email.strip().lower()
+    team = db.get_team_for_email(email)
+    if not team:
+        return {"has_team": False}
+    members = db.get_team_members(team["id"])
+    leaderboard = db.get_leaderboard(team["id"])
+    return {"has_team": True, "team": team, "members": members, "leaderboard": leaderboard}
+
+@app.get("/teams", response_class=HTMLResponse)
+async def teams_page(request: Request):
+    return templates.TemplateResponse("teams.html", {"request": request})
 
 # -- Admin --
 @app.get("/admin", response_class=HTMLResponse)
