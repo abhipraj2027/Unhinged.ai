@@ -53,6 +53,25 @@ def init_db():
             "rewrite_provider":wp, "rewrite_model":wm, "rewrite_max_tokens":"800", "rewrite_temperature":"0.7",
             "roast_prompt":ROAST_PROMPT, "rewrite_prompt":REWRITE_PROMPT,
         }
+        # Teams & auth tables
+        db.execute("""CREATE TABLE IF NOT EXISTS teams (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, owner_email TEXT NOT NULL,
+            seats INTEGER DEFAULT 5, is_active INTEGER DEFAULT 1, invite_code TEXT UNIQUE,
+            razorpay_sub_id TEXT, created_at REAL DEFAULT (strftime('%s','now')))""")
+        db.execute("""CREATE TABLE IF NOT EXISTS team_members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, team_id INTEGER NOT NULL, email TEXT NOT NULL,
+            role TEXT DEFAULT 'member', joined_at REAL DEFAULT (strftime('%s','now')),
+            UNIQUE(team_id, email), FOREIGN KEY(team_id) REFERENCES teams(id))""")
+        db.execute("""CREATE TABLE IF NOT EXISTS scan_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, score REAL,
+            scanned_at REAL DEFAULT (strftime('%s','now')))""")
+        # Add columns if upgrading
+        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("password_hash","TEXT")]:
+            try: db.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
+            except: pass
+        try: db.execute("ALTER TABLE teams ADD COLUMN invite_code TEXT")
+        except: pass
+
         for k,v in defaults.items():
             db.execute("INSERT OR REPLACE INTO llm_config(config_key,config_value) VALUES(?,?)",(k,v))
 
@@ -141,3 +160,132 @@ def get_stats():
         today = db.execute("SELECT COUNT(*) c FROM users WHERE last_scan_at>?",(time.time()-86400,)).fetchone()["c"]
         recent = db.execute("SELECT email,scans_used,last_scan_at,is_pro FROM users WHERE last_scan_at IS NOT NULL ORDER BY last_scan_at DESC LIMIT 10").fetchall()
         return {"total_users":total,"pro_users":pro,"total_scans":scans,"active_today":today,"recent":[dict(r) for r in recent]}
+
+# ── Auth helpers ──────────────────────────────────────────────
+
+def _hash_pw(pw):
+    import hashlib
+    return hashlib.sha256(pw.encode()).hexdigest()
+
+def set_password(email, password):
+    email = email.strip().lower()
+    h = _hash_pw(password)
+    get_or_create(email)
+    with get_db() as db:
+        db.execute("UPDATE users SET password_hash=? WHERE email=?", (h, email))
+
+def check_password(email, password):
+    email = email.strip().lower()
+    with get_db() as db:
+        r = db.execute("SELECT password_hash FROM users WHERE email=?", (email,)).fetchone()
+        if not r or not r["password_hash"]: return False
+        return r["password_hash"] == _hash_pw(password)
+
+def has_password(email):
+    email = email.strip().lower()
+    with get_db() as db:
+        r = db.execute("SELECT password_hash FROM users WHERE email=?", (email,)).fetchone()
+        return bool(r and r["password_hash"])
+
+# ── Team helpers ──────────────────────────────────────────────
+
+def _gen_invite_code():
+    import random, string
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+def create_team(name, owner_email, seats=5):
+    owner_email = owner_email.strip().lower()
+    code = _gen_invite_code()
+    with get_db() as db:
+        db.execute("INSERT INTO teams(name,owner_email,seats,invite_code) VALUES(?,?,?,?)", (name, owner_email, seats, code))
+        team = db.execute("SELECT * FROM teams WHERE owner_email=? ORDER BY id DESC LIMIT 1", (owner_email,)).fetchone()
+        team_id = team["id"]
+        db.execute("INSERT OR IGNORE INTO team_members(team_id,email,role) VALUES(?,?,?)", (team_id, owner_email, "owner"))
+        get_or_create(owner_email)
+        db.execute("UPDATE users SET is_pro=1, expires_at=? WHERE email=?", (time.time()+365*86400, owner_email))
+        return dict(team)
+
+def add_team_member(team_id, email):
+    email = email.strip().lower()
+    with get_db() as db:
+        team = db.execute("SELECT * FROM teams WHERE id=?", (team_id,)).fetchone()
+        if not team: return {"error": "Team not found"}
+        current = db.execute("SELECT COUNT(*) c FROM team_members WHERE team_id=?", (team_id,)).fetchone()["c"]
+        if current >= team["seats"]: return {"error": f"Team full ({team['seats']} seats)"}
+        db.execute("INSERT OR IGNORE INTO team_members(team_id,email,role) VALUES(?,?,?)", (team_id, email, "member"))
+        get_or_create(email)
+        db.execute("UPDATE users SET is_pro=1, expires_at=? WHERE email=?", (time.time()+365*86400, email))
+        return {"success": True, "email": email}
+
+def remove_team_member(team_id, email):
+    email = email.strip().lower()
+    with get_db() as db:
+        db.execute("DELETE FROM team_members WHERE team_id=? AND email=? AND role!='owner'", (team_id, email))
+        db.execute("UPDATE users SET is_pro=0 WHERE email=?", (email,))
+        return {"success": True}
+
+def get_team_for_email(email):
+    email = email.strip().lower()
+    with get_db() as db:
+        row = db.execute("""SELECT t.* FROM teams t
+            JOIN team_members tm ON t.id=tm.team_id
+            WHERE tm.email=? AND t.is_active=1 LIMIT 1""", (email,)).fetchone()
+        return dict(row) if row else None
+
+def get_team_members(team_id):
+    with get_db() as db:
+        rows = db.execute("""SELECT tm.email, tm.role, tm.joined_at,
+            COALESCE(u.scans_used,0) as scans_used,
+            COALESCE(u.daily_scans,0) as daily_scans
+            FROM team_members tm
+            LEFT JOIN users u ON tm.email=u.email
+            WHERE tm.team_id=?
+            ORDER BY tm.role DESC, u.scans_used DESC""", (team_id,)).fetchall()
+        return [dict(r) for r in rows]
+
+def get_team_by_owner(owner_email):
+    owner_email = owner_email.strip().lower()
+    with get_db() as db:
+        row = db.execute("SELECT * FROM teams WHERE owner_email=? AND is_active=1 ORDER BY id DESC LIMIT 1", (owner_email,)).fetchone()
+        return dict(row) if row else None
+
+def get_all_teams():
+    with get_db() as db:
+        rows = db.execute("""SELECT t.*,
+            (SELECT COUNT(*) FROM team_members WHERE team_id=t.id) as member_count
+            FROM teams t WHERE t.is_active=1 ORDER BY t.created_at DESC""").fetchall()
+        return [dict(r) for r in rows]
+
+def join_team_by_code(email, invite_code):
+    email = email.strip().lower()
+    with get_db() as db:
+        team = db.execute("SELECT * FROM teams WHERE invite_code=? AND is_active=1", (invite_code,)).fetchone()
+        if not team: return {"error": "Invalid invite code"}
+        team = dict(team)
+        current = db.execute("SELECT COUNT(*) c FROM team_members WHERE team_id=?", (team["id"],)).fetchone()["c"]
+        if current >= team["seats"]: return {"error": f"Team full ({team['seats']} seats)"}
+        existing = db.execute("SELECT id FROM team_members WHERE team_id=? AND email=?", (team["id"], email)).fetchone()
+        if existing: return {"error": "Already on this team"}
+        db.execute("INSERT INTO team_members(team_id,email,role) VALUES(?,?,?)", (team["id"], email, "member"))
+        get_or_create(email)
+        db.execute("UPDATE users SET is_pro=1, expires_at=? WHERE email=?", (time.time()+365*86400, email))
+        return {"success": True, "team_name": team["name"]}
+
+def log_scan(email, score):
+    email = email.strip().lower()
+    with get_db() as db:
+        db.execute("INSERT INTO scan_log(email,score) VALUES(?,?)", (email, score))
+
+def get_leaderboard(team_id, days=7):
+    cutoff = time.time() - days * 86400
+    with get_db() as db:
+        rows = db.execute("""SELECT sl.email,
+            COUNT(*) as total_scans,
+            ROUND(AVG(sl.score),1) as avg_score,
+            ROUND(MAX(sl.score),1) as max_score
+            FROM scan_log sl
+            JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
+            WHERE sl.scanned_at > ?
+            GROUP BY sl.email
+            ORDER BY avg_score DESC""", (team_id, cutoff)).fetchall()
+        return [dict(r) for r in rows]
