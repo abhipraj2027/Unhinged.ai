@@ -219,6 +219,19 @@ footer a:hover{color:#FF5C00}
   <div class="q"><h4>Can I cancel anytime?</h4><p>Yes. Cancel from Razorpay dashboard. No questions asked.</p></div>
 </section>
 
+<!-- Email capture modal for upgrade -->
+<div id="emailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#141414;border:1px solid rgba(255,92,0,.3);border-radius:16px;padding:28px 24px;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.8)">
+    <div style="font-size:28px;margin-bottom:8px">⚡</div>
+    <h3 style="font-size:18px;font-weight:900;margin-bottom:6px">Upgrade to Pro</h3>
+    <p style="font-size:13px;color:#A1A1AA;margin-bottom:16px;line-height:1.5">Enter your email to continue to payment.<br>This email will be your Pro account.</p>
+    <input type="email" id="upgradeEmail" placeholder="you@company.com" style="width:100%;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px;font-size:14px;outline:none;font-family:ui-monospace,monospace;margin-bottom:12px;text-align:center">
+    <button id="upgradeConfirmBtn" onclick="confirmUpgrade()" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.04em">Continue to Payment →</button>
+    <div style="margin-top:10px;font-size:11px;color:#52525B">₹299/month · Cancel anytime · Secured by Razorpay</div>
+    <div onclick="closeEmailModal()" style="margin-top:12px;font-size:12px;color:#71717A;cursor:pointer">Cancel</div>
+  </div>
+</div>
+
 <footer>
   <span>© 2026 UnHinged</span>
   <a href="/login">Login</a>
@@ -436,43 +449,70 @@ document.getElementById("shareCopy").addEventListener("click", async () => {
 });
 
 // Upgrade handler
-async function handleUpgrade() {
-  // Need email first
-  let email = userEmail;
-  if (!email) {
-    email = prompt("Enter your email to upgrade:");
-    if (!email || !email.includes("@")) return;
-    userEmail = email.trim().toLowerCase();
-    localStorage.setItem("uh_email", userEmail);
+function handleUpgrade() {
+  if (userEmail) {
+    // Already have email — go straight to payment
+    processUpgrade(userEmail);
+  } else {
+    // Show email modal
+    document.getElementById("emailModal").style.display = "flex";
+    document.getElementById("upgradeEmail").value = "";
+    document.getElementById("upgradeEmail").focus();
   }
-  // Create subscription
+}
+
+function closeEmailModal() {
+  document.getElementById("emailModal").style.display = "none";
+}
+
+function confirmUpgrade() {
+  const email = document.getElementById("upgradeEmail").value.trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    document.getElementById("upgradeEmail").style.borderColor = "#EF4444";
+    return;
+  }
+  userEmail = email;
+  localStorage.setItem("uh_email", email);
+  closeEmailModal();
+  processUpgrade(email);
+}
+
+async function processUpgrade(email) {
   try {
     const btn = document.querySelector(".pcard.pro button");
     if (btn) { btn.textContent = "Opening payment..."; btn.disabled = true; }
     const r = await fetch(API + "/api/create-subscription", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: userEmail })
+      body: JSON.stringify({ email: email })
     });
     const d = await r.json();
     if (d.already_pro) {
-      alert("You're already Pro! Refresh the page.");
-      if (btn) { btn.textContent = "Get Pro →"; btn.disabled = false; }
+      isPro = true;
+      if (btn) { btn.textContent = "You are Pro ✓"; }
+      updateScanInfo({ scans_remaining: 30, daily_limit: 30 });
       return;
     }
     if (d.payment_link) {
       window.open(d.payment_link, "_blank");
       if (btn) { btn.textContent = "Complete payment in new tab ↗"; btn.disabled = false; }
     } else {
-      alert(d.message || d.detail || "Payment error. Try again.");
       if (btn) { btn.textContent = "Get Pro →"; btn.disabled = false; }
+      document.getElementById("errBox").textContent = d.message || d.detail || "Payment error.";
+      document.getElementById("errBox").style.display = "block";
     }
   } catch(e) {
-    alert("Cannot reach server. Try again.");
     const btn = document.querySelector(".pcard.pro button");
     if (btn) { btn.textContent = "Get Pro →"; btn.disabled = false; }
+    document.getElementById("errBox").textContent = "Cannot reach server.";
+    document.getElementById("errBox").style.display = "block";
   }
 }
+
+// Close modal on Escape or clicking outside
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeEmailModal(); });
+document.getElementById("emailModal").addEventListener("click", e => { if (e.target.id === "emailModal") closeEmailModal(); });
+document.getElementById("upgradeEmail").addEventListener("keydown", e => { if (e.key === "Enter") confirmUpgrade(); });
 
 initAuth();
 </script>
