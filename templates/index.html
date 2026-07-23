@@ -3,10 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>UnHinged — Stop. Don't send that.</title>
-<meta name="description" content="Score, roast, and rewrite angry emails before you ruin your career. AI-powered tone checker. Try free — no sign-up.">
-<meta property="og:title" content="UnHinged — Stop. Don't send that.">
-<meta property="og:description" content="AI scores your emails 1-10 on the unhinged scale, roasts you about it, then rewrites it professionally.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<meta name="description" content="AI scores your emails 1-10 on the unhinged scale, roasts you, then rewrites them professionally.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -15,222 +13,183 @@ a{color:#FF5C00;text-decoration:none}
 ::selection{background:rgba(255,92,0,.3)}
 .wrap{max-width:860px;margin:0 auto;padding:0 24px}
 
-/* Nav */
-nav{padding:20px 0;display:flex;justify-content:space-between;align-items:center}
-.logo{font-size:22px;font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
-.logo span{font-size:26px}
-.nav-btns{display:flex;gap:10px;align-items:center}
-.nav-btn{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;transition:transform .15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-.nav-btn:hover{transform:translateY(-2px)}
-.nav-link{color:#71717A;font-size:13px;font-weight:500;padding:10px 14px;transition:color .15s}
-.nav-link:hover{color:#FF5C00}
+/* NAV */
+nav{padding:16px 0;display:flex;justify-content:space-between;align-items:center}
+.nav-logo{font-size:20px;font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:8px;color:#fff;text-decoration:none}
+.nav-logo span{font-size:22px}
+.nav-r{display:flex;gap:8px;align-items:center}
+.nav-link{color:#71717A;font-size:13px;font-weight:500;padding:8px 12px;transition:color .15s;text-decoration:none}
+.nav-link:hover{color:#fff}
+.nav-btn{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;padding:8px 18px;border-radius:8px;font-weight:700;font-size:13px;text-decoration:none;transition:transform .12s}
+.nav-btn:hover{transform:translateY(-1px)}
+.nav-btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.12);color:#fff}
+.nav-btn.ghost:hover{border-color:#FF5C00;color:#FF5C00}
+/* User menu */
+.user-menu{position:relative}
+.user-btn{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);cursor:pointer;color:#fff;font-size:13px;font-weight:500}
+.user-btn:hover{border-color:rgba(255,92,0,.4)}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#FF5C00,#FF3B30);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#000}
+.user-pill{font-size:9px;padding:2px 6px;border-radius:999px;font-weight:700;letter-spacing:.1em;margin-left:4px}
+.user-pill.pro{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000}
+.user-pill.free{background:rgba(255,255,255,.08);color:#71717A}
+.dropdown{position:absolute;top:calc(100% + 8px);right:0;background:#1A1A1A;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:6px;min-width:200px;box-shadow:0 16px 48px rgba(0,0,0,.6);display:none;z-index:100}
+.dropdown.show{display:block}
+.dd-item{display:block;padding:10px 14px;border-radius:6px;color:#E4E4E7;font-size:13px;text-decoration:none;cursor:pointer;transition:background .12s}
+.dd-item:hover{background:rgba(255,255,255,.06)}
+.dd-item.red{color:#EF4444}
+.dd-item.red:hover{background:rgba(239,68,68,.08)}
+.dd-divider{height:1px;background:rgba(255,255,255,.06);margin:4px 0}
+.dd-label{padding:8px 14px;font-size:10px;color:#52525B;letter-spacing:.15em;text-transform:uppercase;font-family:ui-monospace,monospace}
 
-/* Hero */
-.hero{text-align:center;padding:60px 0 30px}
-.hero h1{font-size:clamp(38px,6.5vw,64px);font-weight:900;letter-spacing:-.04em;line-height:1.05;margin-bottom:18px}
+/* HERO */
+.hero{text-align:center;padding:50px 0 24px}
+.hero h1{font-size:clamp(36px,6vw,60px);font-weight:900;letter-spacing:-.04em;line-height:1.05;margin-bottom:16px}
 .hero h1 em{font-style:normal;background:linear-gradient(135deg,#FF5C00,#FF3B30);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero p{font-size:17px;color:#A1A1AA;max-width:560px;margin:0 auto;line-height:1.6}
+.hero p{font-size:16px;color:#A1A1AA;max-width:520px;margin:0 auto;line-height:1.6}
 
-/* Analyzer */
-.analyzer{max-width:640px;margin:36px auto 0;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px;position:relative;overflow:hidden}
+/* ANALYZER */
+.analyzer{max-width:620px;margin:28px auto 0;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:24px;position:relative;overflow:hidden}
 .analyzer::before{content:"";position:absolute;top:0;left:40px;right:40px;height:2px;background:linear-gradient(90deg,transparent,#FF5C00,transparent);opacity:.5}
 .a-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.a-label span{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:#71717A;font-family:ui-monospace,monospace}
-#cc{font-size:11px;color:#71717A;font-family:ui-monospace,monospace}
-#cc.w{color:#FACC15}#cc.e{color:#EF4444}
-textarea{width:100%;min-height:130px;max-height:240px;resize:vertical;background:rgba(0,0,0,.5);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;font-family:ui-monospace,monospace;font-size:14px;line-height:1.55;outline:none;transition:border-color .2s}
+.a-label span{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:#71717A;font-family:ui-monospace,monospace}
+textarea{width:100%;min-height:120px;max-height:220px;resize:vertical;background:rgba(0,0,0,.5);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px;font-family:ui-monospace,monospace;font-size:14px;line-height:1.5;outline:none;transition:border-color .2s}
 textarea::placeholder{color:#3F3F46}
 textarea:focus{border-color:#FF5C00;box-shadow:0 0 0 3px rgba(255,92,0,.1)}
-.go-btn{margin-top:14px;width:100%;padding:16px;background:linear-gradient(135deg,#FF5C00 0%,#FF3B30 100%);color:#000;border:none;border-radius:12px;cursor:pointer;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 24px rgba(255,92,0,.35);transition:transform .15s,box-shadow .15s}
-.go-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(255,92,0,.5)}
-.go-btn:active{transform:translateY(0)}
+.go-btn{margin-top:12px;width:100%;padding:15px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:12px;cursor:pointer;font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 20px rgba(255,92,0,.35);transition:transform .12s,box-shadow .12s}
+.go-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(255,92,0,.5)}
 .go-btn:disabled{background:rgba(255,255,255,.06);color:#52525B;box-shadow:none;cursor:not-allowed;transform:none}
-.a-hint{text-align:center;margin-top:10px;font-size:12px;color:#3F3F46}
-.a-hint b{color:#52525B}
+.scan-info{text-align:center;margin-top:8px;font-size:12px;color:#52525B;font-family:ui-monospace,monospace}
+.scan-info b{color:#FF5C00}
 
-/* Email capture (shown after first free roast) */
-.email-capture{margin-top:16px;padding:16px;background:rgba(255,92,0,.04);border:1px solid rgba(255,92,0,.2);border-radius:12px;display:none}
-.email-capture p{font-size:13px;color:#D4D4D8;margin-bottom:10px;line-height:1.5}
-.email-capture b{color:#FF5C00}
-.email-row{display:flex;gap:8px}
-.email-row input{flex:1;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;font-size:13px;outline:none;font-family:ui-monospace,monospace}
-.email-row input:focus{border-color:#FF5C00}
-.email-row button{background:#FF5C00;color:#000;border:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}
-
-/* Loading */
-.loading{margin-top:20px;padding:28px;border-radius:14px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);text-align:center}
-.spinner{width:36px;height:36px;border:2.5px solid #FF5C00;border-top-color:transparent;border-radius:50%;margin:0 auto 14px;animation:spin .9s linear infinite}
+/* LOADING */
+.loading{margin-top:18px;padding:24px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);text-align:center;display:none}
+.spinner{width:32px;height:32px;border:2.5px solid #FF5C00;border-top-color:transparent;border-radius:50%;margin:0 auto 12px;animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-#loadMsg{font-family:ui-monospace,monospace;font-size:13px;color:#A1A1AA}
+.error-box{margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25);font-size:13px;color:#FCA5A5;display:none}
 
-/* Results */
-#resultBox{margin-top:20px;display:none}
-.warn-ban{padding:14px 16px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.35);font-size:13px;line-height:1.5;color:#FCA5A5;display:flex;gap:12px;align-items:flex-start;margin-bottom:16px}
-.warn-ban strong{color:#EF4444;font-size:11px;letter-spacing:.15em;text-transform:uppercase}
-.gauge{text-align:center;padding:18px 0 10px}
-.score{font-size:72px;line-height:1;font-weight:900;letter-spacing:-.03em}
-.score .of{color:#71717A;font-size:24px;margin-left:6px}
-.flame{display:inline-block;font-size:36px;margin-left:6px;animation:flick 1.2s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(255,92,0,.7))}
+/* RESULTS */
+#resultBox{margin-top:18px;display:none}
+.gauge{text-align:center;padding:14px 0 8px}
+.score{font-size:64px;line-height:1;font-weight:900;letter-spacing:-.03em}
+.score .of{color:#71717A;font-size:22px;margin-left:4px}
+.flame{display:inline-block;font-size:32px;margin-left:4px;animation:flick 1.2s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(255,92,0,.7))}
 @keyframes flick{0%,100%{transform:scale(1) rotate(-2deg)}50%{transform:scale(1.1) rotate(3deg)}}
-.track{margin:10px auto 4px;width:75%;height:7px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
-.track>i{display:block;height:100%;border-radius:999px;transition:width 1s cubic-bezier(.22,1,.36,1)}
-.caption{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#71717A;margin-top:6px;font-family:ui-monospace,monospace}
-.card{margin-top:14px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
-.card .cap{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:#FF5C00;margin-bottom:8px;font-family:ui-monospace,monospace}
+.track{margin:8px auto 4px;width:70%;height:6px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.track i{display:block;height:100%;border-radius:999px;transition:width 1s cubic-bezier(.22,1,.36,1)}
+.caption{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#71717A;margin-top:4px;font-family:ui-monospace,monospace}
+.card{margin-top:12px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.card .cap{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:#FF5C00;margin-bottom:6px;font-family:ui-monospace,monospace}
 .card .cap.y{color:#FACC15}
-.card p{margin:0;font-size:14px;line-height:1.6;color:#E4E4E7}
-.card.rw{background:rgba(0,0,0,.35);border-color:rgba(255,92,0,.15)}
-.rw-body{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:13px;line-height:1.6;color:#F4F4F5}
+.card p{margin:0;font-size:13px;line-height:1.6;color:#E4E4E7}
+.card.rw{background:rgba(0,0,0,.3);border-color:rgba(255,92,0,.15)}
+.rw-body{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12.5px;line-height:1.6;color:#F4F4F5}
 .cap-row{display:flex;justify-content:space-between;align-items:center}
-.mini{background:transparent;border:1px solid rgba(255,255,255,.12);color:#A1A1AA;padding:6px 12px;border-radius:6px;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:color .15s,border-color .15s}
-.mini:hover{color:#FF5C00;border-color:#FF5C00}
+.mini-btn{background:transparent;border:1px solid rgba(255,255,255,.1);color:#A1A1AA;padding:5px 10px;border-radius:6px;font-family:ui-monospace,monospace;font-size:10px;cursor:pointer}
+.mini-btn:hover{color:#FF5C00;border-color:#FF5C00}
+.warn-ban{margin-bottom:14px;padding:12px 14px;border-radius:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);font-size:12px;color:#FCA5A5;display:flex;gap:10px}
 
-/* CTA after results */
-.result-cta{margin-top:20px;padding:20px;border-radius:14px;background:linear-gradient(135deg,rgba(255,92,0,.08),rgba(255,59,48,.04));border:1px solid rgba(255,92,0,.25);text-align:center;display:none}
-.result-cta h3{font-size:16px;font-weight:800;margin-bottom:6px}
-.result-cta p{font-size:13px;color:#A1A1AA;margin-bottom:14px;line-height:1.5}
-.result-cta .cta-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;padding:14px 28px;border-radius:10px;font-size:14px;font-weight:800;letter-spacing:.06em;text-decoration:none;box-shadow:0 6px 20px rgba(255,92,0,.35);transition:transform .15s,box-shadow .15s}
-.result-cta .cta-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(255,92,0,.5)}
-
-/* Share */
-.share-row{margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;display:none}
-.share-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#A1A1AA;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:ui-monospace,monospace;transition:border-color .15s,color .15s}
+/* SHARE */
+.share-row{margin-top:12px;display:flex;gap:8px;justify-content:center;display:none}
+.share-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#A1A1AA;padding:7px 12px;border-radius:8px;font-size:11px;cursor:pointer;font-family:ui-monospace,monospace}
 .share-btn:hover{border-color:#FF5C00;color:#FF5C00}
 
-/* How it works */
-.how{padding:60px 0}
-.how h2{text-align:center;font-size:28px;font-weight:900;letter-spacing:-.03em;margin-bottom:32px}
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
-.step{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:24px 20px}
-.step-num{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;margin-bottom:12px}
-.step h3{font-size:16px;font-weight:700;margin-bottom:6px}
+/* HOW IT WORKS */
+.how{padding:50px 0}
+.how h2{text-align:center;font-size:26px;font-weight:900;letter-spacing:-.02em;margin-bottom:28px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.step{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:22px 18px}
+.step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;margin-bottom:10px}
+.step h3{font-size:15px;font-weight:700;margin-bottom:5px}
 .step p{color:#A1A1AA;font-size:13px;line-height:1.5}
 
-/* Pricing */
-.pricing{padding:60px 0;text-align:center}
-.pricing h2{font-size:28px;font-weight:900;letter-spacing:-.03em;margin-bottom:8px}
-.pricing>p{color:#71717A;margin-bottom:32px;font-size:14px}
-.cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:600px;margin:0 auto}
-.pcard{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:28px 22px;text-align:left}
+/* PRICING */
+.pricing{padding:50px 0;text-align:center}
+.pricing h2{font-size:26px;font-weight:900;letter-spacing:-.02em;margin-bottom:6px}
+.pricing>p{color:#71717A;margin-bottom:28px;font-size:13px}
+.cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;max-width:820px;margin:0 auto}
+.pcard{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:24px 20px;text-align:left}
 .pcard.pro{border-color:rgba(255,92,0,.5);background:rgba(255,92,0,.04)}
-.pcard .tier{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#71717A;margin-bottom:10px}
-.pcard .price{font-size:36px;font-weight:900;letter-spacing:-.03em;margin-bottom:4px}
-.pcard .price small{font-size:15px;color:#71717A;font-weight:400}
-.pcard ul{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:8px}
-.pcard li{font-size:13px;color:#D4D4D8;display:flex;align-items:center;gap:8px}
-.pcard li::before{content:"✓";color:#FF5C00;font-weight:700}
+.pcard.team{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.04)}
+.pcard .tier{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#71717A;margin-bottom:8px}
+.pcard .price{font-size:32px;font-weight:900;letter-spacing:-.03em;margin-bottom:2px}
+.pcard .price small{font-size:14px;color:#71717A;font-weight:400}
+.pcard ul{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.pcard li{font-size:12px;color:#D4D4D8;display:flex;align-items:center;gap:6px}
+.pcard li::before{content:"✓";color:#FF5C00;font-weight:700;font-size:11px}
+.pcard.team li::before{color:#22C55E}
+.team-cta{display:block;margin-top:12px;text-align:center;color:#22C55E;font-size:12px;font-weight:700;border:1px solid rgba(34,197,94,.25);padding:10px;border-radius:8px;text-decoration:none}
+.team-cta:hover{background:rgba(34,197,94,.06)}
 
 /* FAQ */
-.faq{padding:60px 0}
-.faq h2{font-size:28px;font-weight:900;letter-spacing:-.02em;margin-bottom:24px;text-align:center}
-.q{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:18px 22px;margin-bottom:10px}
-.q h4{font-size:14px;font-weight:700;margin-bottom:6px}
+.faq{padding:50px 0}
+.faq h2{font-size:26px;font-weight:900;letter-spacing:-.02em;margin-bottom:20px;text-align:center}
+.q{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:16px 20px;margin-bottom:8px}
+.q h4{font-size:14px;font-weight:700;margin-bottom:4px}
 .q p{color:#A1A1AA;font-size:13px;line-height:1.5}
 
-footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.06);color:#3F3F46;font-size:11px;letter-spacing:.1em}
+footer{padding:24px 0;text-align:center;border-top:1px solid rgba(255,255,255,.06);color:#3F3F46;font-size:11px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+footer a{color:#52525B;text-decoration:none}
+footer a:hover{color:#FF5C00}
 
-.error-box{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);font-size:13px;color:#FCA5A5;display:none}
-
-@media(max-width:700px){.cards{grid-template-columns:1fr !important}.hero{padding:40px 0 20px}.analyzer{padding:20px}.email-row{flex-direction:column}}
-
-/* Upgrade Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal-box{background:#141414;border:1px solid rgba(255,92,0,.3);border-radius:20px;padding:32px 28px;max-width:420px;width:100%;position:relative;box-shadow:0 32px 80px rgba(0,0,0,.8)}
-.modal-close{position:absolute;top:14px;right:16px;background:0;border:0;color:#71717A;font-size:20px;cursor:pointer}
-.modal-close:hover{color:#fff}
-.plan-card{border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px;margin-bottom:12px;cursor:pointer;transition:border-color .15s}
-.plan-card:hover{border-color:rgba(255,92,0,.4)}
-.plan-card.selected{border-color:#FF5C00;background:rgba(255,92,0,.05)}
-.plan-card .plan-name{font-size:13px;font-weight:700;margin-bottom:4px}
-.plan-card .plan-price{font-size:28px;font-weight:900;letter-spacing:-.02em}
-.plan-card .plan-desc{font-size:12px;color:#71717A;margin-top:4px}
-.plan-card .badge{display:inline-block;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:middle}
+@media(max-width:700px){.cards{grid-template-columns:1fr !important}.hero{padding:36px 0 18px}}
 </style>
 </head>
 <body>
 <div class="wrap">
 
+<!-- NAV -->
 <nav>
-  <div class="logo"><span>🔥</span> UnHinged</div>
-  <div class="nav-btns">
+  <a href="/" class="nav-logo"><span>🔥</span> UnHinged</a>
+  <div class="nav-r" id="navRight">
     <a href="#pricing" class="nav-link">Pricing</a>
-    <button onclick="showUpgradeModal()" class="nav-link" id="upgradeNavBtn" style="background:transparent;border:1px solid rgba(255,92,0,.4);color:#FF5C00;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">⚡ Upgrade</button>
-    <a href="#" class="nav-btn" id="chromeLink">🧩 Add to Chrome</a>
+    <a href="/login" class="nav-btn ghost" id="navLogin">Login</a>
+    <a href="#" class="nav-btn" id="navChromeBtn">Add to Chrome</a>
   </div>
 </nav>
 
-<!-- Hero + Live Analyzer -->
+<!-- HERO -->
 <section class="hero">
   <h1>Stop. Don't <em>send</em> that.</h1>
-  <p>AI scores your email 1-10 on the unhinged scale, roasts you about it, then rewrites it like a pro. Try it right now — free.</p>
+  <p>AI scores your email 1-10 on the unhinged scale, roasts you about it, then rewrites it like a pro.</p>
 </section>
 
+<!-- ANALYZER -->
 <div class="analyzer" id="analyzer">
   <div class="a-label">
     <span>Paste your draft</span>
     <span id="cc">0/2000</span>
   </div>
-  <textarea id="msg" placeholder="Paste the email you're about to regret...&#10;&#10;(Try something angry, passive-aggressive, or all-caps for maximum entertainment)"></textarea>
-  <button class="go-btn" id="goBtn" disabled>
-    <span>🔥</span><span>How Unhinged Am I?</span>
-  </button>
-  <div class="a-hint" id="scanHint"><b>Free</b> · No sign-up · Results in seconds</div>
-  <div id="scanCounter" style="display:none;text-align:center;margin-top:8px;font-family:ui-monospace,monospace;font-size:11px;color:#71717A"></div>
+  <textarea id="msg" placeholder="Paste the email you're about to regret..."></textarea>
+  <button class="go-btn" id="goBtn" disabled>🔥 How Unhinged Am I?</button>
+  <div class="scan-info" id="scanInfo">Free · No sign-up · 5 scans/day</div>
 
-  <!-- Email capture after first roast -->
-  <div class="email-capture" id="emailCapture">
-    <p>That was fun right? Enter your email for <b>4 more free scans</b>. No account needed.</p>
-    <div class="email-row">
-      <input type="email" id="emailIn" placeholder="you@company.com">
-      <button id="emailBtn">Unlock 4 more</button>
-    </div>
+  <!-- Email capture -->
+  <div id="emailCapture" style="display:none;margin-top:14px;padding:14px;background:rgba(255,92,0,.04);border:1px solid rgba(255,92,0,.2);border-radius:10px">
+    <p style="font-size:13px;color:#D4D4D8;margin-bottom:8px">Enter your email for <b style="color:#FF5C00">4 more free scans today</b>.</p>
+    <div style="display:flex;gap:8px"><input type="email" id="emailIn" placeholder="you@company.com" style="flex:1;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;font-size:13px;outline:none"><button id="emailBtn" style="background:#FF5C00;color:#000;border:none;padding:10px 16px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap">Unlock</button></div>
   </div>
 
-  <!-- Loading -->
-  <div class="loading" id="loadBox" style="display:none">
-    <div class="spinner"></div>
-    <div id="loadMsg">Measuring toxicity levels...</div>
-  </div>
-
-  <!-- Error -->
+  <div class="loading" id="loadBox"><div class="spinner"></div><div id="loadMsg" style="font-family:ui-monospace,monospace;font-size:12px;color:#A1A1AA">Measuring toxicity levels...</div></div>
   <div class="error-box" id="errBox"></div>
-
-  <!-- Results -->
-  <div id="resultBox">
-    <div id="warnBan"></div>
-    <div class="gauge" id="gaugeBox"></div>
-    <div id="cardsBox"></div>
-  </div>
-
-  <!-- Share row -->
-  <div class="share-row" id="shareRow">
-    <button class="share-btn" id="shareTwitter">Share on X</button>
-    <button class="share-btn" id="shareCopy">Copy score</button>
-  </div>
-
-  <!-- CTA after results -->
-  <div class="result-cta" id="resultCta">
-    <h3>🔥 Want this inside Gmail?</h3>
-    <p>One click grabs your draft, roasts it, and replaces it with the pro version. All without leaving Gmail.</p>
-    <a href="#" class="cta-btn" id="ctaInstall">🧩 Add to Chrome — Free</a>
-  </div>
+  <div id="resultBox"></div>
+  <div class="share-row" id="shareRow"><button class="share-btn" id="shareX">Share on X</button><button class="share-btn" id="shareCopy">Copy score</button></div>
 </div>
 
-<!-- How it works -->
+<!-- HOW IT WORKS -->
 <section class="how">
   <h2>How it works</h2>
   <div class="steps">
-    <div class="step"><div class="step-num">1</div><h3>Write your unhinged email</h3><p>Go ahead. Get it all out. Type that rant about how everyone is incompetent.</p></div>
-    <div class="step"><div class="step-num">2</div><h3>Get roasted</h3><p>Claude Haiku scores and roasts your tone. You'll laugh. You'll cringe. You'll delete the draft.</p></div>
-    <div class="step"><div class="step-num">3</div><h3>Send the grown-up version</h3><p>GPT-4o rewrites it professionally. Same message, zero career damage. One click to replace.</p></div>
+    <div class="step"><div class="step-num">1</div><h3>Write your unhinged email</h3><p>Go ahead. Type that rant about how everyone is incompetent.</p></div>
+    <div class="step"><div class="step-num">2</div><h3>Get roasted</h3><p>AI scores and roasts your tone. You'll laugh, cringe, then delete the draft.</p></div>
+    <div class="step"><div class="step-num">3</div><h3>Send the grown-up version</h3><p>Professional rewrite ready to paste. Same message, zero career damage.</p></div>
   </div>
 </section>
 
-<!-- Pricing -->
+<!-- PRICING -->
 <section class="pricing" id="pricing">
   <h2>Simple pricing</h2>
   <p>Less than one awkward HR meeting.</p>
-  <div class="cards" style="grid-template-columns:1fr 1fr 1fr;max-width:860px">
+  <div class="cards">
     <div class="pcard">
       <div class="tier">Free</div>
       <div class="price">₹0</div>
@@ -239,13 +198,13 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
     <div class="pcard pro">
       <div class="tier">Pro</div>
       <div class="price">₹299<small>/month</small></div>
-      <ul><li>30 scans/day</li><li>Full AI roasts</li><li>Professional rewrites</li><li>Cancel anytime</li></ul>
+      <ul><li>30 scans/day</li><li>Priority analysis</li><li>Works on web + Gmail</li><li>Cancel anytime</li></ul>
     </div>
-    <div class="pcard" style="border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.04)">
+    <div class="pcard team">
       <div class="tier" style="color:#22C55E">Teams</div>
       <div class="price">₹199<small>/user/mo</small></div>
-      <ul><li>30 scans/day per user</li><li>5+ team members</li><li>Team leaderboard</li><li>One billing admin</li><li>Priority support</li></ul>
-      <a href="mailto:abhishekmusale2027@gmail.com?subject=UnHinged%20Teams&body=Hi%2C%20I%27m%20interested%20in%20UnHinged%20Teams%20for%20my%20team%20of%20____%20people." style="display:block;margin-top:14px;text-align:center;color:#22C55E;font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(34,197,94,.3);padding:10px;border-radius:8px">Contact for Teams →</a>
+      <ul><li>30 scans/day per user</li><li>5+ team members</li><li>Team leaderboard</li><li>Admin dashboard</li><li>Invite code onboarding</li></ul>
+      <a href="mailto:abhishekmusale2027@gmail.com?subject=UnHinged%20Teams" class="team-cta">Contact for Teams →</a>
     </div>
   </div>
 </section>
@@ -253,245 +212,192 @@ footer{padding:28px 0;text-align:center;border-top:1px solid rgba(255,255,255,.0
 <!-- FAQ -->
 <section class="faq">
   <h2>FAQ</h2>
-  <div class="q"><h4>Do you store my emails?</h4><p>No. Your text is sent to AI for analysis only and immediately discarded. Nothing is stored.</p></div>
-  <div class="q"><h4>What if my email is actually fine?</h4><p>You'll score 2/10 and the AI will be disappointed. It might suggest adding some chaos.</p></div>
-  <div class="q"><h4>Can I cancel anytime?</h4><p>Yes. Cancel from your Razorpay dashboard. No questions, no guilt trips.</p></div>
-  <div class="q"><h4>Is this actually useful or just funny?</h4><p>Both. The roast makes you read the feedback. The rewrite is legitimately professional. Comedian + CEO reviewing every email.</p></div>
+  <div class="q"><h4>Do you store my emails?</h4><p>No. Text is sent to AI for analysis and immediately discarded. Nothing stored.</p></div>
+  <div class="q"><h4>What if my email is actually fine?</h4><p>You'll score 2/10 and the AI will be disappointed. It might suggest adding chaos.</p></div>
+  <div class="q"><h4>Can I cancel anytime?</h4><p>Yes. Cancel from Razorpay dashboard. No questions asked.</p></div>
 </section>
 
-<footer>v2.3 · Built with Claude Haiku + GPT-4o-mini · © 2026 UnHinged</footer>
-</div>
-
-<!-- Upgrade Modal -->
-<div class="modal-overlay" id="upgradeModal" style="display:none" onclick="if(event.target===this)closeUpgradeModal()">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:32px;margin-bottom:8px">🔥</div>
-      <h2 style="font-size:20px;font-weight:900;letter-spacing:-.02em;margin-bottom:6px">Upgrade to UnHinged Pro</h2>
-      <p style="font-size:13px;color:#A1A1AA">Stop sending unhinged emails. Forever.</p>
-    </div>
-
-    <div class="plan-card selected" id="planMonthly" onclick="selectPlan('monthly')">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="plan-name">Monthly <span class="badge" style="display:none" id="badgeMonthly">POPULAR</span></div>
-        <div style="width:18px;height:18px;border-radius:50%;border:2px solid #FF5C00;display:flex;align-items:center;justify-content:center" id="radioMonthly"><div style="width:8px;height:8px;border-radius:50%;background:#FF5C00"></div></div>
-      </div>
-      <div class="plan-price">₹299<span style="font-size:14px;color:#71717A;font-weight:400">/month</span></div>
-      <div class="plan-desc">30 scans/day · Cancel anytime</div>
-    </div>
-
-    <div class="plan-card" id="planYearly" onclick="selectPlan('yearly')">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="plan-name">Yearly <span class="badge">SAVE ₹1,089</span></div>
-        <div style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center" id="radioYearly"></div>
-      </div>
-      <div class="plan-price">₹2,499<span style="font-size:14px;color:#71717A;font-weight:400">/year</span></div>
-      <div class="plan-desc">30 scans/day · ₹125/month · Best value</div>
-    </div>
-
-    <div style="background:rgba(255,255,255,.03);border-radius:10px;padding:14px;margin-bottom:16px">
-      <div style="font-size:12px;color:#A1A1AA;line-height:1.7">
-        ✓ 30 scans per day<br>
-        ✓ Full AI roasts by Claude Haiku<br>
-        ✓ Professional rewrites by GPT-4o<br>
-        ✓ Works on web + Gmail extension<br>
-        ✓ Cancel anytime from dashboard
-      </div>
-    </div>
-
-    <div id="modalEmailRow" style="margin-bottom:12px;display:none">
-      <input type="email" id="modalEmail" placeholder="your@email.com" style="width:100%;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;font-size:13px;outline:none;font-family:ui-monospace,monospace">
-    </div>
-
-    <button onclick="doUpgradeFromModal()" id="modalPayBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 20px rgba(255,92,0,.35)">
-      🔥 Start Pro — ₹299/month
-    </button>
-    <div style="text-align:center;margin-top:10px;font-size:11px;color:#52525B">
-      Secured by Razorpay · UPI, Cards, Netbanking accepted
-    </div>
-    <div style="text-align:center;margin-top:8px;font-size:11px;color:#3F3F46">
-      Already a Pro? <a onclick="checkProFromModal()" style="color:#FF5C00;cursor:pointer">Restore access →</a>
-    </div>
-  </div>
+<footer>
+  <span>© 2026 UnHinged</span>
+  <a href="/login">Login</a>
+  <a href="/account">Account</a>
+  <a href="/teams">Teams</a>
+  <a href="/admin">Admin</a>
+</footer>
 </div>
 
 <script>
+const API = window.location.origin;
 const MAX = 2000;
-const MSGS = ["Measuring toxicity levels...","Consulting HR...","Counting exclamation marks...","Calculating your regret...","Locating chill pills...","Analyzing passive aggression..."];
-let freeUsed = parseInt(localStorage.getItem("uh_free") || "0");
+const MSGS = ["Measuring toxicity levels...","Consulting HR...","Counting exclamation marks...","Calculating your regret...","Locating chill pills..."];
 let userEmail = localStorage.getItem("uh_email") || "";
-let isPro = localStorage.getItem("uh_pro") === "1";
+let freeUsed = parseInt(localStorage.getItem("uh_free") || "0");
+let isPro = false;
 let lastResult = null;
 let loadTimer = null;
 
-// Show pro bar or scan counter on load
-function updateStatusUI() {
-  const proBar = document.getElementById("proBar");
-  const scanCounter = document.getElementById("scanCounter");
-  const scanHint = document.getElementById("scanHint");
-  if (isPro) {
-    proBar.style.display = "flex";
-    scanHint.style.display = "none";
-    scanCounter.style.display = "block";
-    scanCounter.innerHTML = "✓ Pro · Unlimited scans";
-    scanCounter.style.color = "#FF5C00";
-    goBtn.disabled = false;
-  } else {
-    const remaining = Math.max(0, 5 - freeUsed);
-    if (remaining > 0) {
-      scanHint.style.display = "block";
-      scanCounter.style.display = "block";
-      scanCounter.innerHTML = `<span style="color:#FF5C00;font-weight:700">${remaining}</span> free scan${remaining === 1 ? "" : "s"} remaining`;
-    } else {
-      scanHint.style.display = "none";
-      scanCounter.style.display = "block";
-      scanCounter.innerHTML = '<span style="color:#EF4444">Free trial ended</span> · <a onclick="showPaywall()" style="color:#FF5C00;cursor:pointer">Upgrade to Pro →</a>';
-    }
-  }
-}
+const msg = document.getElementById("msg");
+const goBtn = document.getElementById("goBtn");
+const scanInfo = document.getElementById("scanInfo");
+const loadBox = document.getElementById("loadBox");
+const errBox = document.getElementById("errBox");
+const resultBox = document.getElementById("resultBox");
+const shareRow = document.getElementById("shareRow");
 
-// Check pro status from backend if email exists
-async function initProStatus() {
-  if (userEmail) {
-    try {
-      const r = await fetch("/api/check-status?email=" + encodeURIComponent(userEmail));
+// ── Check auth state on load ─────────────────────────────
+async function initAuth() {
+  try {
+    const r = await fetch(API + "/api/auth/me", {credentials: "include"});
+    if (r.ok) {
       const d = await r.json();
-      if (d.is_pro) {
-        isPro = true;
-        localStorage.setItem("uh_pro", "1");
-        freeUsed = d.scans_used || freeUsed;
-      } else {
-        freeUsed = d.scans_used || freeUsed;
-        localStorage.setItem("uh_free", freeUsed);
+      showLoggedInNav(d);
+      userEmail = d.email;
+      isPro = d.is_pro;
+      localStorage.setItem("uh_email", d.email);
+      updateScanInfo(d);
+    }
+  } catch(e) {}
+  // Also check status if we have email but no auth
+  if (userEmail && !isPro) {
+    try {
+      const r = await fetch(API + "/api/check-status?email=" + encodeURIComponent(userEmail));
+      if (r.ok) {
+        const d = await r.json();
+        isPro = d.is_pro;
+        updateScanInfo(d);
       }
     } catch(e) {}
   }
-  updateStatusUI();
 }
 
-initProStatus();
+function showLoggedInNav(user) {
+  const navR = document.getElementById("navRight");
+  const initial = user.email.charAt(0).toUpperCase();
+  const pillClass = user.is_pro ? "pro" : "free";
+  const pillText = user.is_pro ? "PRO" : "FREE";
+  navR.innerHTML = `
+    <a href="#pricing" class="nav-link">Pricing</a>
+    <a href="#" class="nav-btn" id="navChromeBtn">Add to Chrome</a>
+    <div class="user-menu">
+      <div class="user-btn" onclick="toggleMenu()">
+        <div class="user-avatar">${initial}</div>
+        <span style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${user.email.split("@")[0]}</span>
+        <span class="user-pill ${pillClass}">${pillText}</span>
+      </div>
+      <div class="dropdown" id="userDropdown">
+        <div class="dd-label">${user.email}</div>
+        ${user.team ? '<a class="dd-item" href="/teams">👥 My Team</a>' : ''}
+        <a class="dd-item" href="/account">👤 Account</a>
+        <div class="dd-divider"></div>
+        <div class="dd-item red" onclick="doLogout()">Logout</div>
+      </div>
+    </div>`;
+}
 
-const msg = document.getElementById("msg");
-const cc = document.getElementById("cc");
-const goBtn = document.getElementById("goBtn");
-const loadBox = document.getElementById("loadBox");
-const loadMsg = document.getElementById("loadMsg");
-const errBox = document.getElementById("errBox");
-const resultBox = document.getElementById("resultBox");
-const emailCapture = document.getElementById("emailCapture");
-const resultCta = document.getElementById("resultCta");
-const shareRow = document.getElementById("shareRow");
+function toggleMenu() {
+  const dd = document.getElementById("userDropdown");
+  dd.classList.toggle("show");
+}
+document.addEventListener("click", (e) => {
+  const dd = document.getElementById("userDropdown");
+  if (dd && !e.target.closest(".user-menu")) dd.classList.remove("show");
+});
 
-// Textarea
+async function doLogout() {
+  await fetch(API + "/api/auth/logout", {method: "POST", credentials: "include"});
+  localStorage.removeItem("uh_email");
+  localStorage.removeItem("uh_free");
+  localStorage.removeItem("uh_pro");
+  window.location.reload();
+}
+
+function updateScanInfo(d) {
+  const rem = d.scans_remaining !== undefined ? d.scans_remaining : (5 - freeUsed);
+  const lim = d.daily_limit || 5;
+  if (isPro) {
+    scanInfo.innerHTML = '<b style="color:#FF5C00">Pro</b> · ' + rem + '/' + lim + ' scans today';
+  } else {
+    scanInfo.innerHTML = '<b>' + rem + '</b>/' + lim + ' free scans today';
+  }
+}
+
+// ── Textarea ─────────────────────────────────────────────
 msg.addEventListener("input", () => {
   if (msg.value.length > MAX + 50) msg.value = msg.value.slice(0, MAX + 50);
   const n = msg.value.length;
-  cc.textContent = n + "/" + MAX;
-  cc.className = n > MAX ? "e" : n > MAX * 0.9 ? "w" : "";
+  document.getElementById("cc").textContent = n + "/" + MAX;
   goBtn.disabled = n === 0 || n > MAX;
 });
 
-// Analyze
-goBtn.addEventListener("click", async () => {
-  const text = msg.value.trim();
-  if (!text) return;
-
-  // Minimum length check
-  if (text.length < 10) {
-    errBox.textContent = "Please paste a real email draft (at least 10 characters).";
-    errBox.style.display = "block";
-    return;
-  }
-
-  // Check if already hit free limit
-  if (freeUsed >= 5 && !localStorage.getItem("uh_pro")) {
-    showPaywall();
-    return;
-  }
-
-  // Check if they need email first (after first free scan)
-  if (freeUsed >= 1 && !userEmail) {
-    emailCapture.style.display = "block";
-    emailCapture.scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
-  }
-
-  // Show loading
-  errBox.style.display = "none";
-  resultBox.style.display = "none";
-  resultCta.style.display = "none";
-  shareRow.style.display = "none";
-  loadBox.style.display = "block";
-  loadBox.scrollIntoView({ behavior: "smooth", block: "center" });
-
-  let mi = 0;
-  loadTimer = setInterval(() => {
-    mi = (mi + 1) % MSGS.length;
-    loadMsg.textContent = MSGS[mi];
-  }, 1400);
-
-  try {
-    const email = userEmail || "web-free-" + Date.now() + "@unhinged.app";
-    const r = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, message: text })
-    });
-    const d = await r.json();
-
-    clearInterval(loadTimer);
-    loadBox.style.display = "none";
-
-    if (r.status === 402) {
-      loadBox.style.display = "none";
-      errBox.style.display = "none";
-      showPaywall();
-      return;
-    }
-    if (!r.ok) {
-      const errMsg = d.detail || d.message || d.error || "Something broke. Try again.";
-      errBox.textContent = errMsg;
-      errBox.style.display = "block";
-      return;
-    }
-
-    lastResult = d;
-    if (!isPro) {
-      freeUsed++;
-      localStorage.setItem("uh_free", freeUsed);
-    }
-    updateStatusUI();
-    renderResults(d);
-
-    // After first scan, show email capture if no email yet
-    if (freeUsed === 1 && !userEmail) {
-      emailCapture.style.display = "block";
-    }
-
-  } catch (e) {
-    clearInterval(loadTimer);
-    loadBox.style.display = "none";
-    errBox.textContent = "Cannot reach server. Your app may be sleeping — wait 30 seconds and try again.";
-    errBox.style.display = "block";
-  }
-});
-
-// Email capture
+// ── Email capture ────────────────────────────────────────
 document.getElementById("emailBtn").addEventListener("click", () => {
   const em = document.getElementById("emailIn").value.trim().toLowerCase();
   if (!em || !em.includes("@")) return;
   userEmail = em;
   localStorage.setItem("uh_email", em);
-  emailCapture.style.display = "none";
-  // If they were trying to analyze, trigger it now
+  document.getElementById("emailCapture").style.display = "none";
   goBtn.click();
 });
 document.getElementById("emailIn").addEventListener("keydown", e => {
   if (e.key === "Enter") document.getElementById("emailBtn").click();
 });
 
-// Render results
+// ── Analyze ──────────────────────────────────────────────
+goBtn.addEventListener("click", async () => {
+  const text = msg.value.trim();
+  if (!text || text.length < 10) {
+    errBox.textContent = "Paste a real email (at least 10 characters).";
+    errBox.style.display = "block";
+    return;
+  }
+
+  if (freeUsed >= 1 && !userEmail) {
+    document.getElementById("emailCapture").style.display = "block";
+    document.getElementById("emailCapture").scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+
+  errBox.style.display = "none";
+  resultBox.style.display = "none";
+  shareRow.style.display = "none";
+  loadBox.style.display = "block";
+  loadBox.scrollIntoView({behavior:"smooth",block:"center"});
+
+  let mi = 0;
+  loadTimer = setInterval(() => { mi = (mi+1) % MSGS.length; document.getElementById("loadMsg").textContent = MSGS[mi]; }, 1400);
+
+  try {
+    const email = userEmail || "web-" + Date.now() + "@unhinged.app";
+    const r = await fetch(API + "/api/analyze", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({email, message: text})
+    });
+    clearInterval(loadTimer);
+    loadBox.style.display = "none";
+    const d = await r.json();
+    if (r.status === 402) {
+      errBox.innerHTML = '⚡ Daily limit reached. <a href="/login" style="color:#FF5C00;font-weight:700">Login</a> or <a href="#pricing" style="color:#FF5C00;font-weight:700">Upgrade to Pro →</a>';
+      errBox.style.display = "block";
+      return;
+    }
+    if (!r.ok) {
+      errBox.textContent = d.detail || d.message || "Analysis failed. Try again.";
+      errBox.style.display = "block";
+      return;
+    }
+    lastResult = d;
+    if (!isPro) { freeUsed++; localStorage.setItem("uh_free", freeUsed); }
+    if (freeUsed === 1 && !userEmail) document.getElementById("emailCapture").style.display = "block";
+    if (d.scans_remaining !== undefined) updateScanInfo(d);
+    renderResults(d);
+  } catch(e) {
+    clearInterval(loadTimer);
+    loadBox.style.display = "none";
+    errBox.textContent = "Cannot reach server. Try again in a moment.";
+    errBox.style.display = "block";
+  }
+});
+
 function scoreColor(s) { return s < 4 ? "#22C55E" : s < 8 ? "#FACC15" : "#EF4444"; }
 
 function renderResults(d) {
@@ -499,251 +405,35 @@ function renderResults(d) {
   const col = scoreColor(s);
   const danger = s >= 8;
   const pct = (s / 10) * 100;
-
-  // Warning banner
-  document.getElementById("warnBan").innerHTML = danger
-    ? `<div class="warn-ban"><span>⚠️</span><div><strong>Reconsider before sending</strong><div style="margin-top:4px;color:#F4F4F5">${s.toFixed(1)}/10 on the unhinged scale. Use the rewrite below.</div></div></div>`
-    : "";
-
-  // Gauge
-  document.getElementById("gaugeBox").innerHTML = `
-    <div class="score" style="color:${col};text-shadow:0 0 28px ${col}55">${s.toFixed(1)}<span class="of">/10</span>${danger ? '<span class="flame">🔥</span>' : ''}</div>
-    <div class="track"><i style="width:${pct}%;background:${col}"></i></div>
-    <div class="caption">Unhinged Score</div>`;
-
-  // Cards
-  document.getElementById("cardsBox").innerHTML = `
-    <div class="card"><div class="cap">▲ AI Roast</div><p id="roastP"></p></div>
-    <div class="card" style="border-left:3px solid #FACC15"><div class="cap y">Risk Assessment</div><p id="riskP" style="font-family:ui-monospace,monospace;font-size:13px"></p></div>
-    <div class="card rw">
-      <div class="cap-row"><div class="cap">Professional Rewrite</div><button class="mini" id="cpBtn">Copy rewrite</button></div>
-      <div class="rw-body" id="rwBody" style="margin-top:10px"></div>
-    </div>`;
-
+  let html = "";
+  if (danger) html += '<div class="warn-ban"><span>⚠️</span><div><strong style="color:#EF4444;font-size:11px;letter-spacing:.1em;text-transform:uppercase">Reconsider before sending</strong><div style="margin-top:2px;color:#F4F4F5">' + s.toFixed(1) + '/10 — use the rewrite below.</div></div></div>';
+  html += '<div class="gauge"><div class="score" style="color:' + col + ';text-shadow:0 0 24px ' + col + '55">' + s.toFixed(1) + '<span class="of">/10</span>' + (danger ? '<span class="flame">🔥</span>' : '') + '</div><div class="track"><i style="width:' + pct + '%;background:' + col + '"></i></div><div class="caption">Unhinged Score</div></div>';
+  html += '<div class="card"><div class="cap">▲ AI Roast</div><p id="roastP"></p></div>';
+  html += '<div class="card" style="border-left:3px solid #FACC15"><div class="cap y">Risk Assessment</div><p id="riskP" style="font-family:ui-monospace,monospace;font-size:12.5px"></p></div>';
+  html += '<div class="card rw"><div class="cap-row"><div class="cap">Professional Rewrite</div><button class="mini-btn" id="cpBtn">Copy</button></div><div class="rw-body" id="rwBody" style="margin-top:8px"></div></div>';
+  resultBox.innerHTML = html;
   document.getElementById("roastP").textContent = d.roast || "";
   document.getElementById("riskP").textContent = d.risk || "";
   document.getElementById("rwBody").textContent = d.rewrite || "";
-
   document.getElementById("cpBtn").addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(d.rewrite || "");
-      document.getElementById("cpBtn").textContent = "Copied ✓";
-      setTimeout(() => document.getElementById("cpBtn").textContent = "Copy rewrite", 2000);
-    } catch {}
+    try { await navigator.clipboard.writeText(d.rewrite || ""); document.getElementById("cpBtn").textContent = "Copied ✓"; setTimeout(() => document.getElementById("cpBtn").textContent = "Copy", 2000); } catch {}
   });
-
   resultBox.style.display = "block";
-  resultCta.style.display = "block";
   shareRow.style.display = "flex";
-  resultBox.scrollIntoView({ behavior: "smooth", block: "start" });
+  resultBox.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
-// Paywall
-function showPaywall() {
-  const paywallEl = document.getElementById("paywallBox");
-  if (paywallEl) { paywallEl.style.display = "block"; return; }
-  const box = document.createElement("div");
-  box.id = "paywallBox";
-  box.style.cssText = "margin-top:20px;padding:24px;border-radius:14px;background:linear-gradient(135deg,rgba(255,92,0,.08),rgba(255,59,48,.04));border:1px solid rgba(255,92,0,.3);text-align:center";
-  box.innerHTML = `
-    <div style="font-size:28px;margin-bottom:10px">⚡</div>
-    <h3 style="font-size:18px;font-weight:800;margin-bottom:8px">Free trial complete</h3>
-    <p style="font-size:13px;color:#A1A1AA;margin-bottom:18px;line-height:1.6">You've used all 5 free roasts.<br>Upgrade to <b style="color:#FF5C00">UnHinged Pro</b> for unlimited scans.<br><span style="color:#71717A;font-size:12px">₹299/month · Cancel anytime</span></p>
-    <button onclick="doUpgrade()" style="width:100%;padding:15px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 20px rgba(255,92,0,.4)">🔥 Upgrade to Pro — ₹299/month</button>
-    <div style="margin-top:10px;font-size:12px;color:#52525B">Already upgraded? <a onclick="checkProStatus()" style="color:#FF5C00;cursor:pointer">Click here to activate</a></div>
-  `;
-  document.getElementById("analyzer").appendChild(box);
-  box.scrollIntoView({ behavior: "smooth", block: "center" });
-}
-
-async function doUpgrade() {
-  if (!userEmail) {
-    const em = prompt("Enter your email to continue:");
-    if (!em || !em.includes("@")) return;
-    userEmail = em.trim().toLowerCase();
-    localStorage.setItem("uh_email", userEmail);
-  }
-  const btn = document.querySelector("#paywallBox button");
-  if (btn) { btn.textContent = "Opening payment..."; btn.disabled = true; }
-  try {
-    const r = await fetch("/api/create-subscription", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: userEmail })
-    });
-    const d = await r.json();
-    if (d.already_pro) {
-      alert("You are already Pro! Refresh the page.");
-      return;
-    }
-    if (d.payment_link) {
-      window.open(d.payment_link, "_blank");
-      if (btn) { btn.textContent = "Complete payment in new tab"; btn.disabled = false; }
-    } else {
-      if (btn) { btn.textContent = "🔥 Upgrade to Pro — ₹299/month"; btn.disabled = false; }
-      alert(d.message || "Payment error. Try again.");
-    }
-  } catch(e) {
-    if (btn) { btn.textContent = "🔥 Upgrade to Pro — ₹299/month"; btn.disabled = false; }
-    alert("Network error. Try again.");
-  }
-}
-
-async function checkProStatus() {
-  if (!userEmail) return;
-  const r = await fetch("/api/check-status?email=" + encodeURIComponent(userEmail));
-  const d = await r.json();
-  if (d.is_pro) {
-    isPro = true;
-    localStorage.setItem("uh_pro", "1");
-    const pw = document.getElementById("paywallBox");
-    if (pw) pw.remove();
-    updateStatusUI();
-    // Show pro confirmation
-    const conf = document.createElement("div");
-    conf.style.cssText = "margin-top:16px;padding:16px;border-radius:12px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);text-align:center;font-size:14px;color:#86EFAC";
-    conf.innerHTML = "🔥 Pro activated! You now have unlimited scans.";
-    document.getElementById("analyzer").appendChild(conf);
-    setTimeout(() => conf.remove(), 4000);
-  } else {
-    alert("Pro not activated yet. Complete the payment first.");
-  }
-}
-
-// Share
-document.getElementById("shareTwitter").addEventListener("click", () => {
+document.getElementById("shareX").addEventListener("click", () => {
   if (!lastResult) return;
-  const s = Number(lastResult.score).toFixed(1);
-  const text = encodeURIComponent(`I just scored ${s}/10 on the UnHinged email scale 🔥\n\nThis AI roasted my email so hard I deleted the whole draft.\n\nTry it free →`);
-  window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+  const text = encodeURIComponent("I scored " + Number(lastResult.score).toFixed(1) + "/10 on the UnHinged email scale 🔥\n\nTry it free → unhinged.email");
+  window.open("https://twitter.com/intent/tweet?text=" + text, "_blank");
 });
-
 document.getElementById("shareCopy").addEventListener("click", async () => {
   if (!lastResult) return;
-  const s = Number(lastResult.score).toFixed(1);
-  const text = `I scored ${s}/10 on UnHinged 🔥 — "${lastResult.roast}"`;
-  try {
-    await navigator.clipboard.writeText(text);
-    document.getElementById("shareCopy").textContent = "Copied ✓";
-    setTimeout(() => document.getElementById("shareCopy").textContent = "Copy score", 2000);
-  } catch {}
+  try { await navigator.clipboard.writeText("I scored " + Number(lastResult.score).toFixed(1) + "/10 on UnHinged 🔥 — unhinged.email"); document.getElementById("shareCopy").textContent = "Copied ✓"; setTimeout(() => document.getElementById("shareCopy").textContent = "Copy score", 2000); } catch {}
 });
-// Upgrade Modal
-let selectedPlan = "monthly";
 
-function showUpgradeModal() {
-  document.getElementById("upgradeModal").style.display = "flex";
-  if (!userEmail) {
-    document.getElementById("modalEmailRow").style.display = "block";
-    document.getElementById("modalEmail").value = "";
-  }
-}
-
-function closeUpgradeModal() {
-  document.getElementById("upgradeModal").style.display = "none";
-}
-
-function selectPlan(plan) {
-  selectedPlan = plan;
-  const monthly = document.getElementById("planMonthly");
-  const yearly = document.getElementById("planYearly");
-  const radioM = document.getElementById("radioMonthly");
-  const radioY = document.getElementById("radioYearly");
-  const btn = document.getElementById("modalPayBtn");
-
-  if (plan === "monthly") {
-    monthly.className = "plan-card selected";
-    yearly.className = "plan-card";
-    radioM.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#FF5C00"></div>';
-    radioM.style.borderColor = "#FF5C00";
-    radioY.innerHTML = "";
-    radioY.style.borderColor = "rgba(255,255,255,.2)";
-    btn.textContent = "🔥 Start Pro — ₹299/month";
-  } else {
-    yearly.className = "plan-card selected";
-    monthly.className = "plan-card";
-    radioY.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#FF5C00"></div>';
-    radioY.style.borderColor = "#FF5C00";
-    radioM.innerHTML = "";
-    radioM.style.borderColor = "rgba(255,255,255,.2)";
-    btn.textContent = "🔥 Start Pro — ₹2,499/year";
-  }
-}
-
-async function doUpgradeFromModal() {
-  let email = userEmail;
-  if (!email) {
-    email = document.getElementById("modalEmail").value.trim().toLowerCase();
-    if (!email || !email.includes("@")) {
-      document.getElementById("modalEmail").style.borderColor = "#EF4444";
-      return;
-    }
-    userEmail = email;
-    localStorage.setItem("uh_email", email);
-  }
-
-  const btn = document.getElementById("modalPayBtn");
-  btn.textContent = "Opening payment...";
-  btn.disabled = true;
-
-  try {
-    const r = await fetch("/api/create-subscription", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, plan: selectedPlan })
-    });
-    const d = await r.json();
-    if (d.already_pro) {
-      isPro = true;
-      localStorage.setItem("uh_pro", "1");
-      closeUpgradeModal();
-      updateStatusUI();
-      return;
-    }
-    if (d.payment_link) {
-      window.open(d.payment_link, "_blank");
-      btn.textContent = "✓ Complete payment in new tab";
-      btn.disabled = false;
-    } else {
-      btn.textContent = selectedPlan === "monthly" ? "🔥 Start Pro — ₹299/month" : "🔥 Start Pro — ₹2,499/year";
-      btn.disabled = false;
-      alert(d.message || "Payment error. Please try again.");
-    }
-  } catch(e) {
-    btn.textContent = selectedPlan === "monthly" ? "🔥 Start Pro — ₹299/month" : "🔥 Start Pro — ₹2,499/year";
-    btn.disabled = false;
-    alert("Network error. Try again.");
-  }
-}
-
-async function checkProFromModal() {
-  const email = userEmail || document.getElementById("modalEmail")?.value.trim().toLowerCase();
-  if (!email) return;
-  try {
-    const r = await fetch("/api/check-status?email=" + encodeURIComponent(email));
-    const d = await r.json();
-    if (d.is_pro) {
-      isPro = true;
-      userEmail = email;
-      localStorage.setItem("uh_pro", "1");
-      localStorage.setItem("uh_email", email);
-      closeUpgradeModal();
-      updateStatusUI();
-      const pw = document.getElementById("paywallBox");
-      if (pw) pw.remove();
-    } else {
-      alert("Pro not found for this email. Complete payment first.");
-    }
-  } catch(e) { alert("Network error. Try again."); }
-}
-
-// Also make showPaywall open the modal
-function showPaywall() {
-  showUpgradeModal();
-}
-
-// Keyboard close
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeUpgradeModal(); });
+initAuth();
 </script>
 </body>
 </html>
