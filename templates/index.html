@@ -194,11 +194,13 @@ footer a:hover{color:#FF5C00}
       <div class="tier">Free</div>
       <div class="price">₹0</div>
       <ul><li>5 scans/day</li><li>Full AI roasts</li><li>Professional rewrites</li><li>No sign-up needed</li></ul>
+      <button onclick="document.getElementById('msg').focus();window.scrollTo({top:0,behavior:'smooth'})" style="display:block;width:100%;margin-top:14px;padding:12px;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Start Free ↑</button>
     </div>
     <div class="pcard pro">
       <div class="tier">Pro</div>
       <div class="price">₹299<small>/month</small></div>
       <ul><li>30 scans/day</li><li>Priority analysis</li><li>Works on web + Gmail</li><li>Cancel anytime</li></ul>
+      <button onclick="handleUpgrade()" style="display:block;width:100%;margin-top:14px;padding:12px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.04em">Get Pro →</button>
     </div>
     <div class="pcard team">
       <div class="tier" style="color:#22C55E">Teams</div>
@@ -432,6 +434,45 @@ document.getElementById("shareCopy").addEventListener("click", async () => {
   if (!lastResult) return;
   try { await navigator.clipboard.writeText("I scored " + Number(lastResult.score).toFixed(1) + "/10 on UnHinged 🔥 — unhinged.email"); document.getElementById("shareCopy").textContent = "Copied ✓"; setTimeout(() => document.getElementById("shareCopy").textContent = "Copy score", 2000); } catch {}
 });
+
+// Upgrade handler
+async function handleUpgrade() {
+  // Need email first
+  let email = userEmail;
+  if (!email) {
+    email = prompt("Enter your email to upgrade:");
+    if (!email || !email.includes("@")) return;
+    userEmail = email.trim().toLowerCase();
+    localStorage.setItem("uh_email", userEmail);
+  }
+  // Create subscription
+  try {
+    const btn = document.querySelector(".pcard.pro button");
+    if (btn) { btn.textContent = "Opening payment..."; btn.disabled = true; }
+    const r = await fetch(API + "/api/create-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: userEmail })
+    });
+    const d = await r.json();
+    if (d.already_pro) {
+      alert("You're already Pro! Refresh the page.");
+      if (btn) { btn.textContent = "Get Pro →"; btn.disabled = false; }
+      return;
+    }
+    if (d.payment_link) {
+      window.open(d.payment_link, "_blank");
+      if (btn) { btn.textContent = "Complete payment in new tab ↗"; btn.disabled = false; }
+    } else {
+      alert(d.message || d.detail || "Payment error. Try again.");
+      if (btn) { btn.textContent = "Get Pro →"; btn.disabled = false; }
+    }
+  } catch(e) {
+    alert("Cannot reach server. Try again.");
+    const btn = document.querySelector(".pcard.pro button");
+    if (btn) { btn.textContent = "Get Pro →"; btn.disabled = false; }
+  }
+}
 
 initAuth();
 </script>
