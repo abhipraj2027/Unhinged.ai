@@ -193,6 +193,106 @@ async def verify_pay(body: VerifyReq):
     db.set_pro(body.email, body.razorpay_subscription_id, body.razorpay_payment_id)
     return {"success":True,"is_pro":True}
 
+# -- Auth --
+class SignupReq(BaseModel):
+    email: str
+    password: str
+    name: str = ""
+
+class LoginReq(BaseModel):
+    email: str
+    password: str
+
+class JoinTeamReq(BaseModel):
+    email: str
+    password: str
+    invite_code: str
+
+@app.post("/api/auth/signup")
+async def signup(body: SignupReq):
+    email = body.email.strip().lower()
+    if len(body.password) < 6:
+        raise HTTPException(400, "Password must be at least 6 characters")
+    if db.has_password(email):
+        raise HTTPException(400, "Account already exists. Login instead.")
+    db.get_or_create(email)
+    db.set_password(email, body.password)
+    token = signer.dumps({"email": email, "type": "user"})
+    resp = JSONResponse({"success": True, "email": email, "is_pro": bool(db.get_user(email).get("is_pro"))})
+    resp.set_cookie("user_token", token, httponly=True, samesite="lax", max_age=30*86400)
+    return resp
+
+@app.post("/api/auth/login")
+async def login(body: LoginReq):
+    email = body.email.strip().lower()
+    if not db.check_password(email, body.password):
+        raise HTTPException(401, "Wrong email or password")
+    user = db.get_user(email)
+    user = db.reset_daily(email) or user
+    team = db.get_team_for_email(email)
+    token = signer.dumps({"email": email, "type": "user"})
+    resp = JSONResponse({
+        "success": True,
+        "email": email,
+        "is_pro": bool(user.get("is_pro")),
+        "team": team.get("name") if team else None,
+        "scans_remaining": db.remaining(user),
+        "daily_limit": db.limit_for(user),
+    })
+    resp.set_cookie("user_token", token, httponly=True, samesite="lax", max_age=30*86400)
+    return resp
+
+@app.get("/api/auth/me")
+async def auth_me(request: Request):
+    try:
+        data = signer.loads(request.cookies.get("user_token", ""))
+        email = data.get("email", "")
+    except:
+        return JSONResponse(status_code=401, content={"error": "Not logged in"})
+    user = db.get_user(email)
+    if not user:
+        return JSONResponse(status_code=401, content={"error": "User not found"})
+    user = db.reset_daily(email) or user
+    team = db.get_team_for_email(email)
+    return {
+        "email": email,
+        "is_pro": bool(user.get("is_pro")),
+        "team": team.get("name") if team else None,
+        "team_id": team.get("id") if team else None,
+        "scans_remaining": db.remaining(user),
+        "daily_limit": db.limit_for(user),
+    }
+
+@app.post("/api/auth/logout")
+async def logout():
+    resp = JSONResponse({"success": True})
+    resp.delete_cookie("user_token")
+    return resp
+
+@app.post("/api/teams/join")
+async def join_team(body: JoinTeamReq):
+    email = body.email.strip().lower()
+    # Create account if needed
+    if not db.has_password(email):
+        if len(body.password) < 6:
+            raise HTTPException(400, "Password must be at least 6 characters")
+        db.get_or_create(email)
+        db.set_password(email, body.password)
+    else:
+        if not db.check_password(email, body.password):
+            raise HTTPException(401, "Wrong password for existing account")
+    result = db.join_team_by_code(email, body.invite_code.strip().upper())
+    if result.get("error"):
+        raise HTTPException(400, result["error"])
+    token = signer.dumps({"email": email, "type": "user"})
+    resp = JSONResponse({"success": True, "team_name": result.get("team_name"), "is_pro": True})
+    resp.set_cookie("user_token", token, httponly=True, samesite="lax", max_age=30*86400)
+    return resp
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
 # -- Teams --
 class TeamCreateReq(BaseModel):
     name: str

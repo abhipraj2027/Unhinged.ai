@@ -61,6 +61,9 @@ a{color:#FF5C00;text-decoration:none}
   <input type="email" id="gateEmail" placeholder="you@company.com">
   <br><br>
   <button class="btn" onclick="loadTeam()">Open Dashboard</button>
+  <div style="margin-top:14px;font-size:12px;color:#52525B">
+    <a href="/login" style="color:#FF5C00">Login</a> · <a href="/login" style="color:#22C55E">Join a team with invite code</a>
+  </div>
 </div>
 
 <!-- No team -->
@@ -86,6 +89,11 @@ a{color:#FF5C00;text-decoration:none}
       <div id="teamName" style="font-size:16px;font-weight:700"></div>
       <div id="seatCount" style="font-size:11px;color:#71717A;font-family:'JetBrains Mono',monospace"></div>
     </div>
+    <div id="inviteCodeBox" style="display:none;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px 16px;margin-bottom:14px;text-align:center">
+      <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#71717A;margin-bottom:6px">Share invite code</div>
+      <div id="inviteCode" style="font-size:24px;font-weight:900;letter-spacing:.3em;color:#22C55E;font-family:'JetBrains Mono',monospace;cursor:pointer" onclick="copyCode()" title="Click to copy"></div>
+      <div style="font-size:10px;color:#52525B;margin-top:4px">Team members join at <b>unhinged.email/login</b> → Join Team tab</div>
+    </div>
     <div id="members"></div>
 
     <!-- Add member (owner only) -->
@@ -109,6 +117,17 @@ let teamData = null;
 let myEmail = "";
 
 document.getElementById("gateEmail").addEventListener("keydown", e => { if(e.key==="Enter") loadTeam(); });
+
+// Auto-check if logged in
+fetch(API + "/api/auth/me", {credentials: "include"}).then(r => {
+  if (r.ok) return r.json();
+}).then(d => {
+  if (d && d.email && d.team) {
+    myEmail = d.email;
+    document.getElementById("gateEmail").value = d.email;
+    loadTeam();
+  }
+}).catch(() => {});
 
 async function loadTeam() {
   myEmail = document.getElementById("gateEmail").value.trim().toLowerCase();
@@ -140,6 +159,12 @@ function renderDashboard(d) {
 
   document.getElementById("teamName").textContent = team.name;
   document.getElementById("seatCount").textContent = members.length + "/" + team.seats + " seats";
+
+  // Show invite code if owner
+  if (team.owner_email === myEmail && team.invite_code) {
+    document.getElementById("inviteCodeBox").style.display = "block";
+    document.getElementById("inviteCode").textContent = team.invite_code;
+  }
 
   // Leaderboard
   const lbEl = document.getElementById("leaderboard");
@@ -209,6 +234,11 @@ async function removeMember(email) {
     toast(email + " removed.");
     loadTeam();
   } catch(e) { toast("Failed to remove."); }
+}
+
+function copyCode() {
+  const code = document.getElementById("inviteCode").textContent;
+  navigator.clipboard.writeText(code).then(() => toast("Invite code copied!"));
 }
 
 function toast(msg) {
