@@ -291,6 +291,74 @@ async def change_password(request: Request):
     db.set_password(email, new_pw)
     return {"success": True}
 
+class ForgotReq(BaseModel):
+    email: str
+
+class ResetReq(BaseModel):
+    token: str
+    new_password: str
+
+@app.post("/api/auth/forgot-password")
+async def forgot_password(body: ForgotReq):
+    email = body.email.strip().lower()
+    if not db.get_user(email):
+        # Don't reveal if email exists
+        return {"success": True, "message": "If this email exists, a reset link has been sent."}
+    if not db.has_password(email):
+        return {"success": True, "message": "If this email exists, a reset link has been sent."}
+    token = db.create_reset_token(email)
+    if not token:
+        return {"success": True, "message": "If this email exists, a reset link has been sent."}
+    reset_url = f"{APP_URL}/reset-password?token={token}"
+    # Try to send email
+    sent = await _send_reset_email(email, reset_url)
+    if sent:
+        log.info(f"Reset email sent to {email}")
+        return {"success": True, "message": "Reset link sent to your email. Check inbox and spam."}
+    else:
+        log.warning(f"Could not send reset email to {email}, showing link directly")
+        return {"success": True, "message": "Reset link sent to your email. Check inbox and spam.", "reset_url": reset_url}
+
+async def _send_reset_email(to_email, reset_url):
+    """Send reset email via Resend or SMTP."""
+    resend_key = os.getenv("RESEND_API_KEY")
+    if resend_key:
+        try:
+            async with httpx.AsyncClient() as client:
+                r = await client.post("https://api.resend.com/emails", 
+                    headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                    json={
+                        "from": os.getenv("FROM_EMAIL", "UnHinged <noreply@unhinged.email>"),
+                        "to": [to_email],
+                        "subject": "Reset your UnHinged password",
+                        "html": f'<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:20px"><h2 style="color:#FF5C00">🔥 UnHinged</h2><p>Someone requested a password reset for your account.</p><p><a href="{reset_url}" style="display:inline-block;padding:12px 24px;background:#FF5C00;color:#000;text-decoration:none;border-radius:8px;font-weight:bold">Reset Password</a></p><p style="color:#999;font-size:12px">This link expires in 1 hour. If you did not request this, ignore this email.</p></div>'
+                    })
+                return r.status_code == 200
+        except Exception as e:
+            log.error(f"Resend error: {e}")
+            return False
+    # No email service configured — log the URL
+    log.info(f"RESET LINK (no email service): {reset_url}")
+    return False
+
+import httpx as _httpx
+
+@app.post("/api/auth/reset-password")
+async def reset_password(body: ResetReq):
+    if len(body.new_password) < 6:
+        raise HTTPException(400, "Password must be at least 6 characters")
+    email = db.verify_reset_token(body.token)
+    if not email:
+        raise HTTPException(400, "Invalid or expired reset link. Request a new one.")
+    db.set_password(email, body.new_password)
+    db.use_reset_token(body.token)
+    log.info(f"Password reset for {email}")
+    return {"success": True, "message": "Password reset! You can now login."}
+
+@app.get("/reset-password", response_class=HTMLResponse)
+async def reset_page(request: Request):
+    return templates.TemplateResponse("reset-password.html", {"request": request})
+
 @app.post("/api/teams/join")
 async def join_team(body: JoinTeamReq):
     email = body.email.strip().lower()

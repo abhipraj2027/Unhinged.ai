@@ -195,6 +195,40 @@ def has_password(email):
         r = db.execute("SELECT password_hash FROM users WHERE email=?", (email,)).fetchone()
         return bool(r and r["password_hash"])
 
+def create_reset_token(email):
+    import random, string
+    email = email.strip().lower()
+    user = get_user(email)
+    if not user: return None
+    token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+    expires = time.time() + 3600  # 1 hour
+    with get_db() as db:
+        db.execute("""CREATE TABLE IF NOT EXISTS reset_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at REAL NOT NULL,
+            used INTEGER DEFAULT 0)""")
+        db.execute("INSERT INTO reset_tokens(email,token,expires_at) VALUES(?,?,?)", (email, token, expires))
+    return token
+
+def verify_reset_token(token):
+    with get_db() as db:
+        db.execute("""CREATE TABLE IF NOT EXISTS reset_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at REAL NOT NULL,
+            used INTEGER DEFAULT 0)""")
+        row = db.execute("SELECT * FROM reset_tokens WHERE token=? AND used=0", (token,)).fetchone()
+        if not row: return None
+        if time.time() > row["expires_at"]: return None
+        return row["email"]
+
+def use_reset_token(token):
+    with get_db() as db:
+        db.execute("UPDATE reset_tokens SET used=1 WHERE token=?", (token,))
+
 def get_user_profile(email):
     email = email.strip().lower()
     user = get_user(email)

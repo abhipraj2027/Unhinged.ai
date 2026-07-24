@@ -60,7 +60,17 @@ a{color:#FF5C00;text-decoration:none}
     <label>Password</label>
     <input type="password" id="loginPw" placeholder="Your password">
     <button class="btn" onclick="doLogin()">🔥 Login</button>
-    <div class="link" onclick="showTab('signup')">Don't have an account? Sign up</div>
+    <div style="display:flex;justify-content:space-between;margin-top:10px">
+      <span class="link" onclick="showTab('signup')">Sign up</span>
+      <span class="link" onclick="showForgot()">Forgot password?</span>
+    </div>
+
+    <!-- Forgot password form (hidden) -->
+    <div id="forgotBox" style="display:none;margin-top:16px;padding:16px;background:rgba(255,92,0,.04);border:1px solid rgba(255,92,0,.15);border-radius:10px">
+      <p style="font-size:12px;color:#A1A1AA;margin-bottom:10px">Enter your email and we'll send a reset link.</p>
+      <input type="email" id="forgotEmail" placeholder="you@company.com">
+      <button class="btn" onclick="doForgot()" style="margin-top:8px;font-size:12px;padding:10px">Send Reset Link</button>
+    </div>
   </div>
 
   <!-- Signup -->
@@ -189,6 +199,36 @@ async function doJoin() {
 document.getElementById("loginPw").addEventListener("keydown", e => { if(e.key==="Enter") doLogin(); });
 document.getElementById("signupPw").addEventListener("keydown", e => { if(e.key==="Enter") doSignup(); });
 document.getElementById("joinPw").addEventListener("keydown", e => { if(e.key==="Enter") doJoin(); });
+
+// Forgot password
+function showForgot() {
+  var box = document.getElementById("forgotBox");
+  box.style.display = box.style.display === "none" ? "block" : "none";
+  if (box.style.display === "block") document.getElementById("forgotEmail").focus();
+}
+
+async function doForgot() {
+  var email = document.getElementById("forgotEmail").value.trim();
+  if (!email || !email.includes("@")) return showErr("Enter a valid email");
+  hideMsg();
+  try {
+    var r = await fetch(API + "/api/auth/forgot-password", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({email: email})
+    });
+    var d = await r.json();
+    if (d.reset_url) {
+      // No email service — show link directly (dev mode)
+      showOk("No email service configured. Use this link: ");
+      document.getElementById("okBox").innerHTML += '<br><a href="' + d.reset_url + '" style="color:#FF5C00;word-break:break-all;font-size:11px">' + d.reset_url + '</a>';
+    } else {
+      showOk(d.message || "If this email exists, a reset link has been sent. Check your inbox.");
+    }
+  } catch(e) {
+    showErr("Network error. Try again.");
+  }
+}
 
 // Check if already logged in
 fetch(API + "/api/auth/me", {credentials: "include"}).then(r => {
