@@ -107,6 +107,26 @@ select{appearance:none;cursor:pointer}
   <div class="result" id="testResult" style="display:none"></div>
 </div>
 
+<!-- User Management -->
+<div class="section">
+  <h2>🔍 User Management</h2>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <input id="searchEmail" placeholder="Search by email..." style="flex:1;margin:0">
+    <button class="btn" style="width:auto;padding:8px 16px" onclick="searchUser()">Search</button>
+  </div>
+  <div id="userResult" style="display:none;background:rgba(0,0,0,.3);border-radius:8px;padding:12px;margin-bottom:12px">
+    <div id="userInfo"></div>
+  </div>
+  <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:12px;margin-top:8px">
+    <label>Quick Pro Grant/Revoke</label>
+    <div style="display:flex;gap:8px">
+      <input id="proEmail" placeholder="user@email.com" style="flex:1;margin:0">
+      <button class="btn" style="width:auto;padding:8px 12px;font-size:11px;background:#22C55E" onclick="grantPro()">Grant Pro</button>
+      <button class="btn" style="width:auto;padding:8px 12px;font-size:11px;background:#EF4444" onclick="revokePro()">Revoke</button>
+    </div>
+  </div>
+</div>
+
 <!-- Teams Management -->
 <div class="section">
   <h2>👥 Teams</h2>
@@ -323,6 +343,51 @@ async function addToTeam(teamId){
     loadStats();
   }catch(e){toast('Error: '+e.message,'err')}
 }
+
+// User management
+async function searchUser(){
+  var email=document.getElementById('searchEmail').value.trim();
+  if(!email)return;
+  try{
+    var r=await fetch(API+'/admin/search-user?email='+encodeURIComponent(email),{credentials:'include'});
+    if(!r.ok){document.getElementById('userResult').style.display='block';document.getElementById('userInfo').innerHTML='<span style="color:#EF4444">User not found</span>';return}
+    var d=await r.json();
+    if(!d.email){document.getElementById('userResult').style.display='block';document.getElementById('userInfo').innerHTML='<span style="color:#EF4444">User not found</span>';return}
+    var pro=d.is_pro?'<span style="background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;padding:1px 6px;border-radius:99px;font-size:9px;font-weight:700">PRO</span>':'<span style="background:rgba(255,255,255,.06);color:#71717A;padding:1px 6px;border-radius:99px;font-size:9px;font-weight:700">FREE</span>';
+    var team=d.team?'<div style="font-size:11px;color:#22C55E;margin-top:4px">Team: '+d.team.name+'</div>':'';
+    var html='<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>'+d.email+'</strong> '+pro+team+'</div></div>';
+    html+='<div style="font-size:11px;color:#71717A;margin-top:6px;font-family:JetBrains Mono,monospace">Scans: '+d.scans_used+' total · '+d.daily_scans+'/'+d.scans_remaining+' today</div>';
+    document.getElementById('userResult').style.display='block';
+    document.getElementById('userInfo').innerHTML=html;
+  }catch(e){toast('Search error: '+e.message,'err')}
+}
+
+async function grantPro(){
+  var email=document.getElementById('proEmail').value.trim();
+  if(!email)return;
+  try{
+    var r=await fetch(API+'/admin/set-pro',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,action:'grant'})});
+    var d=await r.json();
+    if(r.ok)toast('Pro granted to '+email);
+    else toast(d.detail||'Failed','err');
+    loadStats();
+  }catch(e){toast('Error','err')}
+}
+
+async function revokePro(){
+  var email=document.getElementById('proEmail').value.trim();
+  if(!email)return;
+  if(!confirm('Revoke Pro from '+email+'?'))return;
+  try{
+    var r=await fetch(API+'/admin/set-pro',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,action:'revoke'})});
+    var d=await r.json();
+    if(r.ok)toast('Pro revoked from '+email);
+    else toast(d.detail||'Failed','err');
+    loadStats();
+  }catch(e){toast('Error','err')}
+}
+
+document.getElementById('searchEmail').addEventListener('keydown',function(e){if(e.key==='Enter')searchUser()});
 
 // loadTeams called in auto-login above
 </script>

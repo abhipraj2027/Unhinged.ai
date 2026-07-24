@@ -291,6 +291,41 @@ async def change_password(request: Request):
     db.set_password(email, new_pw)
     return {"success": True}
 
+@app.post("/api/auth/cancel-subscription")
+async def cancel_sub(request: Request):
+    email = _get_current_user(request)
+    if not email: raise HTTPException(401, "Not authenticated")
+    user = db.get_user(email)
+    if not user or not user.get("is_pro"):
+        raise HTTPException(400, "No active subscription")
+    # If Razorpay subscription exists, cancel it
+    sub_id = user.get("razorpay_sub_id")
+    if sub_id:
+        try:
+            _rz().subscription.cancel(sub_id)
+        except Exception as e:
+            log.error(f"Razorpay cancel error: {e}")
+    db.unset_pro(email)
+    return {"success": True, "message": "Subscription cancelled"}
+
+@app.post("/api/auth/delete-account")
+async def delete_account(request: Request):
+    email = _get_current_user(request)
+    if not email: raise HTTPException(401, "Not authenticated")
+    # Cancel any subscription first
+    user = db.get_user(email)
+    if user and user.get("razorpay_sub_id"):
+        try: _rz().subscription.cancel(user["razorpay_sub_id"])
+        except: pass
+    # Remove from teams
+    with db.get_db() as conn:
+        conn.execute("DELETE FROM team_members WHERE email=?", (email,))
+        conn.execute("DELETE FROM scan_log WHERE email=?", (email,))
+        conn.execute("DELETE FROM users WHERE email=?", (email,))
+    resp = JSONResponse({"success": True})
+    resp.delete_cookie("auth_token")
+    return resp
+
 class ForgotReq(BaseModel):
     email: str
 
@@ -452,6 +487,40 @@ async def teams_page(request: Request):
     return templates.TemplateResponse("teams.html", {"request": request})
 
 # -- Admin --
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_page(request: Request):
+    return templates.TemplateResponse("privacy.html", {"request": request})
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms_page(request: Request):
+    return templates.TemplateResponse("terms.html", {"request": request})
+
+# Admin manual Pro management
+@app.post("/admin/set-pro")
+async def admin_set_pro(request: Request):
+    if not _admin_ok(request): raise HTTPException(401)
+    body = await request.json()
+    email = body.get("email","").strip().lower()
+    action = body.get("action","grant")
+    if not email: raise HTTPException(400,"Email required")
+    if action == "grant":
+        db.set_pro(email)
+        return {"success":True,"message":f"Pro granted to {email}"}
+    else:
+        db.unset_pro(email)
+        return {"success":True,"message":f"Pro revoked from {email}"}
+
+@app.get("/admin/search-user")
+async def admin_search(request: Request, email: str = ""):
+    if not _admin_ok(request): raise HTTPException(401)
+    email = email.strip().lower()
+    if not email: return []
+    user = db.get_user(email)
+    if not user: return []
+    user = db.reset_daily(email) or user
+    team = db.get_team_for_email(email)
+    return {**user, "team": dict(team) if team else None, "scans_remaining": db.remaining(user)}
+
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_page(request: Request):
     return templates.TemplateResponse("admin.html",{"request":request})

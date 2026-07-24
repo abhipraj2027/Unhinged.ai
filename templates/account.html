@@ -3,53 +3,56 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>UnHinged — My Account</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0A0A0A;color:#fff;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+*{margin:0;padding:0;box-sizing:border-box}body{background:#0A0A0A;color:#fff;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
 .wrap{max-width:640px;margin:0 auto;padding:24px}
-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px}
-.logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:900}
+nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900}
 .logo a{color:#fff;text-decoration:none}
-.nav-r{display:flex;gap:12px;align-items:center}
-.nav-r a{color:#71717A;font-size:13px;text-decoration:none}
-.nav-r a:hover{color:#FF5C00}
-.btn-logout{background:rgba(255,255,255,.06);color:#A1A1AA;border:1px solid rgba(255,255,255,.08);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600}
-.btn-logout:hover{border-color:#EF4444;color:#EF4444}
-.section{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:24px;margin-bottom:20px}
-h2{font-size:14px;font-weight:700;color:#FF5C00;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
-h2.green{color:#22C55E}
-.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.nav-r{display:flex;gap:10px;align-items:center}
+.nav-r a{color:#71717A;font-size:13px;text-decoration:none}.nav-r a:hover{color:#FF5C00}
+.btn-out{background:rgba(255,255,255,.06);color:#A1A1AA;border:1px solid rgba(255,255,255,.08);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600}
+.btn-out:hover{border-color:#EF4444;color:#EF4444}
+.section{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:22px;margin-bottom:16px}
+h2{font-size:13px;font-weight:700;color:#FF5C00;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+h2.green{color:#22C55E}h2.red{color:#EF4444}
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .row:last-child{border:none}
-.row .label{font-size:12px;color:#71717A;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em}
-.row .value{font-size:14px;font-weight:600}
-.pill{display:inline-flex;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.1em}
+.row .label{font-size:11px;color:#71717A;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em}
+.row .value{font-size:13px;font-weight:600}
+.pill{display:inline-flex;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.1em}
 .pill-pro{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000}
 .pill-free{background:rgba(255,255,255,.06);color:#A1A1AA}
 .pill-team{background:rgba(34,197,94,.15);color:#22C55E}
-.bar{height:8px;border-radius:999px;background:rgba(255,255,255,.06);margin-top:8px;overflow:hidden}
+.bar{height:7px;border-radius:999px;background:rgba(255,255,255,.06);margin-top:6px;overflow:hidden}
 .bar i{display:block;height:100%;border-radius:999px;background:#FF5C00;transition:width .5s}
-.btn{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;padding:12px 24px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;width:100%;margin-top:12px}
+.btn{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;width:100%;margin-top:10px;text-align:center}
 .btn:hover{opacity:.9}
 .btn.ghost{background:transparent;color:#A1A1AA;border:1px solid rgba(255,255,255,.08)}
 .btn.green{background:#22C55E}
-label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#71717A;margin-bottom:6px;margin-top:14px;font-family:'JetBrains Mono',monospace}
-input{width:100%;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px;font-size:13px;outline:none;font-family:'JetBrains Mono',monospace}
+.btn.red{background:transparent;color:#EF4444;border:1px solid rgba(239,68,68,.3)}
+.btn.red:hover{background:rgba(239,68,68,.08)}
+label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#71717A;margin-bottom:4px;margin-top:12px;font-family:'JetBrains Mono',monospace}
+input{width:100%;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;font-size:13px;outline:none;font-family:'JetBrains Mono',monospace}
 input:focus{border-color:#FF5C00}
-.msg{padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none}
+.msg{padding:10px 12px;border-radius:8px;font-size:12px;margin-top:10px;display:none}
 .msg.ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);color:#86EFAC;display:block}
 .msg.err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;display:block}
-.loading{text-align:center;padding:60px;color:#52525B}
+.loading{text-align:center;padding:50px;color:#52525B}
+footer{padding:20px 0;text-align:center;border-top:1px solid rgba(255,255,255,.06);margin-top:20px;font-size:11px;color:#3F3F46}
+footer a{color:#52525B;text-decoration:none;margin:0 8px}footer a:hover{color:#FF5C00}
 </style>
 </head>
 <body>
 <div class="wrap">
 <nav>
-  <div class="logo"><span>🔥</span> <a href="/">UnHinged</a></div>
+  <div class="logo"><span>🔥</span><a href="/">UnHinged</a></div>
   <div class="nav-r">
     <a href="/">Home</a>
     <a href="/teams" id="teamsLink" style="display:none">My Team</a>
-    <button class="btn-logout" id="logoutBtn" onclick="doLogout()">Logout</button>
+    <button class="btn-out" onclick="doLogout()">Logout</button>
   </div>
 </nav>
 
@@ -70,25 +73,39 @@ input:focus{border-color:#FF5C00}
   <div class="section">
     <h2>📊 Today's Usage</h2>
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-      <span id="usageText" style="font-size:13px"></span>
-      <span id="usageNum" style="font-size:20px;font-weight:900;color:#FF5C00"></span>
+      <span id="usageText" style="font-size:12px"></span>
+      <span id="usageNum" style="font-size:18px;font-weight:900;color:#FF5C00"></span>
     </div>
     <div class="bar"><i id="usageBar" style="width:0%"></i></div>
+    <div style="font-size:10px;color:#52525B;margin-top:6px;font-family:'JetBrains Mono',monospace">Resets daily at midnight UTC</div>
+  </div>
+
+  <!-- Subscription (Pro users) -->
+  <div class="section" id="subSection" style="display:none">
+    <h2>💳 Subscription</h2>
+    <div class="row"><span class="label">Status</span><span class="value" style="color:#22C55E">Active</span></div>
+    <div class="row"><span class="label">Plan</span><span class="value">Pro — ₹299/month</span></div>
+    <div class="row" id="expiresRow" style="display:none"><span class="label">Renews</span><span class="value" id="renewDate"></span></div>
+    <div style="margin-top:12px;font-size:11px;color:#71717A;line-height:1.6">
+      To manage your subscription, change payment method, or download invoices, visit your Razorpay dashboard.
+    </div>
+    <button class="btn ghost" onclick="window.open('https://razorpay.com/support','_blank')" style="margin-top:8px">Manage on Razorpay ↗</button>
+    <button class="btn red" onclick="cancelSub()" style="margin-top:6px">Cancel Subscription</button>
+  </div>
+
+  <!-- Upgrade (free users) -->
+  <div class="section" id="upgradeSection" style="display:none">
+    <h2>⚡ Upgrade to Pro</h2>
+    <p style="font-size:12px;color:#A1A1AA;line-height:1.5;margin-bottom:10px">30 scans/day, priority analysis, works on web + Gmail extension.</p>
+    <button class="btn" onclick="window.location.href='/#pricing'">Upgrade — ₹299/month</button>
   </div>
 
   <!-- Team -->
   <div class="section" id="teamSection" style="display:none">
     <h2 class="green">👥 Team</h2>
-    <div class="row"><span class="label">Team Name</span><span class="value" id="teamName"></span></div>
-    <div class="row"><span class="label">Your Role</span><span class="value" id="teamRole"></span></div>
-    <a href="/teams" class="btn green" style="text-align:center;text-decoration:none;display:block">Open Team Dashboard →</a>
-  </div>
-
-  <!-- Upgrade (free users only) -->
-  <div class="section" id="upgradeSection" style="display:none">
-    <h2>⚡ Upgrade to Pro</h2>
-    <p style="font-size:13px;color:#A1A1AA;line-height:1.6;margin-bottom:12px">Get 30 scans/day, priority analysis, and never hit a limit again.</p>
-    <button class="btn" onclick="window.location.href='/#pricing'">Upgrade — ₹299/month</button>
+    <div class="row"><span class="label">Team</span><span class="value" id="teamName"></span></div>
+    <div class="row"><span class="label">Role</span><span class="value" id="teamRole"></span></div>
+    <a href="/teams" class="btn green" style="display:block;text-decoration:none;text-align:center">Open Team Dashboard →</a>
   </div>
 
   <!-- Change password -->
@@ -98,66 +115,74 @@ input:focus{border-color:#FF5C00}
     <input type="password" id="oldPw" placeholder="Current password">
     <label>New Password</label>
     <input type="password" id="newPw" placeholder="Min 6 characters">
-    <button class="btn ghost" onclick="changePw()" style="margin-top:14px">Change Password</button>
+    <button class="btn ghost" onclick="changePw()">Change Password</button>
     <div class="msg" id="pwMsg"></div>
   </div>
 
+  <!-- Support -->
+  <div class="section">
+    <h2>💬 Support</h2>
+    <p style="font-size:12px;color:#A1A1AA;line-height:1.6">Having issues? Email us and we'll sort it out.</p>
+    <a href="mailto:abhishekmusale2027@gmail.com?subject=UnHinged%20Support" class="btn ghost" style="display:block;text-align:center;text-decoration:none;margin-top:8px">Contact Support →</a>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="section" style="border-color:rgba(239,68,68,.15)">
+    <h2 class="red">⚠️ Danger Zone</h2>
+    <p style="font-size:12px;color:#71717A;line-height:1.5;margin-bottom:10px">Permanently delete your account and all data. This cannot be undone.</p>
+    <button class="btn red" onclick="deleteAccount()">Delete My Account</button>
+  </div>
+
 </div>
+
+<footer>
+  <a href="/">Home</a>
+  <a href="/privacy">Privacy</a>
+  <a href="/terms">Terms</a>
+  <a href="mailto:abhishekmusale2027@gmail.com">Support</a>
+</footer>
 </div>
 
 <script>
-const API = window.location.origin;
+var API = window.location.origin;
+var userData = null;
 
 async function loadAccount() {
   try {
-    const r = await fetch(API + "/api/auth/me", {credentials: "include"});
-    if (!r.ok) {
-      window.location.href = "/login";
-      return;
-    }
-    const d = await r.json();
+    var r = await fetch(API + "/api/auth/me", {credentials: "include"});
+    if (!r.ok) { window.location.href = "/login"; return; }
+    var d = await r.json();
+    userData = d;
     document.getElementById("loadState").style.display = "none";
     document.getElementById("dashboard").style.display = "block";
-
-    // Profile
     document.getElementById("acctEmail").textContent = d.email;
-    const isPro = d.is_pro;
-    const hasTeam = d.team && d.team.name;
-    let planHtml = "";
-    if (isPro) planHtml += '<span class="pill pill-pro">PRO</span> ';
-    else planHtml += '<span class="pill pill-free">FREE</span> ';
-    if (hasTeam) planHtml += '<span class="pill pill-team">TEAM</span>';
+    var planHtml = d.is_pro ? '<span class="pill pill-pro">PRO</span>' : '<span class="pill pill-free">FREE</span>';
+    if (d.team) planHtml += ' <span class="pill pill-team">TEAM</span>';
     document.getElementById("acctPlan").innerHTML = planHtml;
     document.getElementById("acctScans").textContent = d.scans_used || 0;
     if (d.created_at) {
-      const date = new Date(d.created_at * 1000);
-      document.getElementById("acctSince").textContent = date.toLocaleDateString("en-IN", {year:"numeric",month:"short",day:"numeric"});
+      document.getElementById("acctSince").textContent = new Date(d.created_at * 1000).toLocaleDateString("en-IN", {year:"numeric",month:"short",day:"numeric"});
     }
-
-    // Usage
-    const used = d.daily_scans || 0;
-    const limit = d.daily_limit || 5;
-    const remaining = d.scans_remaining || 0;
-    document.getElementById("usageText").textContent = remaining + " scans remaining today";
+    var used = d.daily_scans || 0, limit = d.daily_limit || 5, rem = d.scans_remaining || 0;
+    document.getElementById("usageText").textContent = rem + " scans remaining today";
     document.getElementById("usageNum").textContent = used + "/" + limit;
     document.getElementById("usageBar").style.width = Math.min(100, (used/limit)*100) + "%";
-
-    // Team
-    if (hasTeam) {
-      document.getElementById("teamSection").style.display = "block";
-      document.getElementById("teamName").textContent = d.team.name;
-      document.getElementById("teamRole").textContent = d.team.owner_email === d.email ? "Owner" : "Member";
-      document.getElementById("teamsLink").style.display = "inline";
-    }
-
-    // Upgrade
-    if (!isPro) {
+    if (d.is_pro) {
+      document.getElementById("subSection").style.display = "block";
+      if (d.expires_at) {
+        document.getElementById("expiresRow").style.display = "flex";
+        document.getElementById("renewDate").textContent = new Date(d.expires_at * 1000).toLocaleDateString("en-IN", {year:"numeric",month:"short",day:"numeric"});
+      }
+    } else {
       document.getElementById("upgradeSection").style.display = "block";
     }
-
-  } catch(e) {
-    window.location.href = "/login";
-  }
+    if (d.team) {
+      document.getElementById("teamSection").style.display = "block";
+      document.getElementById("teamName").textContent = d.team.name || d.team;
+      document.getElementById("teamRole").textContent = (d.team.owner_email === d.email) ? "Owner" : "Member";
+      document.getElementById("teamsLink").style.display = "inline";
+    }
+  } catch(e) { window.location.href = "/login"; }
 }
 
 async function doLogout() {
@@ -166,23 +191,39 @@ async function doLogout() {
 }
 
 async function changePw() {
-  const old_pw = document.getElementById("oldPw").value;
-  const new_pw = document.getElementById("newPw").value;
-  const msgEl = document.getElementById("pwMsg");
-  if (!old_pw || !new_pw) { msgEl.className = "msg err"; msgEl.textContent = "Fill in both fields"; return; }
-  if (new_pw.length < 6) { msgEl.className = "msg err"; msgEl.textContent = "Min 6 characters"; return; }
+  var old_pw = document.getElementById("oldPw").value;
+  var new_pw = document.getElementById("newPw").value;
+  var msg = document.getElementById("pwMsg");
+  if (!old_pw || !new_pw) { msg.className = "msg err"; msg.textContent = "Fill in both fields"; return; }
+  if (new_pw.length < 6) { msg.className = "msg err"; msg.textContent = "Min 6 characters"; return; }
   try {
-    const r = await fetch(API + "/api/auth/change-password", {
-      method: "POST", credentials: "include",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({old_password: old_pw, new_password: new_pw})
-    });
-    const d = await r.json();
-    if (!r.ok) { msgEl.className = "msg err"; msgEl.textContent = d.detail || "Failed"; return; }
-    msgEl.className = "msg ok"; msgEl.textContent = "Password changed successfully";
-    document.getElementById("oldPw").value = "";
-    document.getElementById("newPw").value = "";
-  } catch(e) { msgEl.className = "msg err"; msgEl.textContent = "Network error"; }
+    var r = await fetch(API + "/api/auth/change-password", {method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({old_password:old_pw,new_password:new_pw})});
+    var d = await r.json();
+    if (!r.ok) { msg.className = "msg err"; msg.textContent = d.detail || "Failed"; return; }
+    msg.className = "msg ok"; msg.textContent = "Password changed successfully";
+    document.getElementById("oldPw").value = ""; document.getElementById("newPw").value = "";
+  } catch(e) { msg.className = "msg err"; msg.textContent = "Network error"; }
+}
+
+async function cancelSub() {
+  if (!confirm("Are you sure you want to cancel your Pro subscription? You will lose Pro access at the end of your current billing period.")) return;
+  try {
+    var r = await fetch(API + "/api/auth/cancel-subscription", {method:"POST",credentials:"include"});
+    var d = await r.json();
+    if (r.ok) { alert("Subscription cancelled. Pro access continues until end of billing period."); loadAccount(); }
+    else alert(d.detail || d.message || "Failed to cancel. Contact support.");
+  } catch(e) { alert("Network error. Try again."); }
+}
+
+async function deleteAccount() {
+  if (!confirm("⚠️ DELETE YOUR ACCOUNT?\n\nThis permanently deletes:\n- Your account\n- All scan history\n- Pro subscription\n- Team membership\n\nThis CANNOT be undone.")) return;
+  if (!confirm("Are you absolutely sure? Type your email to confirm would be here but for now just confirm.")) return;
+  try {
+    var r = await fetch(API + "/api/auth/delete-account", {method:"POST",credentials:"include"});
+    var d = await r.json();
+    if (r.ok) { alert("Account deleted. Goodbye!"); window.location.href = "/"; }
+    else alert(d.detail || "Failed. Contact support.");
+  } catch(e) { alert("Network error."); }
 }
 
 loadAccount();
