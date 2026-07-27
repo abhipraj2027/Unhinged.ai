@@ -487,6 +487,10 @@ async def teams_page(request: Request):
     return templates.TemplateResponse("teams.html", {"request": request})
 
 # -- Admin --
+@app.get("/share", response_class=HTMLResponse)
+async def share_page(request: Request):
+    return templates.TemplateResponse("share.html", {"request": request})
+
 @app.get("/privacy", response_class=HTMLResponse)
 async def privacy_page(request: Request):
     return templates.TemplateResponse("privacy.html", {"request": request})

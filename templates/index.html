@@ -172,7 +172,12 @@ footer a:hover{color:#FF5C00}
   <div class="loading" id="loadBox"><div class="spinner"></div><div id="loadMsg" style="font-family:ui-monospace,monospace;font-size:12px;color:#A1A1AA">Measuring toxicity levels...</div></div>
   <div class="error-box" id="errBox"></div>
   <div id="resultBox"></div>
-  <div class="share-row" id="shareRow"><button class="share-btn" id="shareX">Share on X</button><button class="share-btn" id="shareCopy">Copy score</button></div>
+  <div class="share-row" id="shareRow">
+    <button class="share-btn" id="shareCard" style="background:linear-gradient(135deg,rgba(255,92,0,.15),rgba(255,59,48,.08));border-color:rgba(255,92,0,.3);color:#FF5C00;font-weight:700">🔥 Share Roast Card</button>
+    <button class="share-btn" id="shareX">𝕏 Tweet</button>
+    <button class="share-btn" id="shareWA">💬 WhatsApp</button>
+    <button class="share-btn" id="shareCopy">Copy</button>
+  </div>
 </div>
 
 <!-- HOW IT WORKS -->
@@ -440,14 +445,28 @@ function renderResults(d) {
   resultBox.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
+document.getElementById("shareCard").addEventListener("click", () => {
+  if (!lastResult) return;
+  var s = Number(lastResult.score).toFixed(1);
+  var r = encodeURIComponent(lastResult.roast || "");
+  window.open("/share?score=" + s + "&roast=" + r, "_blank");
+});
 document.getElementById("shareX").addEventListener("click", () => {
   if (!lastResult) return;
-  const text = encodeURIComponent("I scored " + Number(lastResult.score).toFixed(1) + "/10 on the UnHinged email scale 🔥\n\nTry it free → unhinged.email");
-  window.open("https://twitter.com/intent/tweet?text=" + text, "_blank");
+  var s = Number(lastResult.score).toFixed(1);
+  var text = "I just scored " + s + "/10 on the UnHinged email scale 🔥\n\n\"" + (lastResult.roast || "").substring(0, 100) + "...\"\n\nHow unhinged is YOUR email? →";
+  window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent("https://unhinged.email"), "_blank");
+});
+document.getElementById("shareWA").addEventListener("click", () => {
+  if (!lastResult) return;
+  var s = Number(lastResult.score).toFixed(1);
+  var text = "I scored " + s + "/10 on UnHinged 🔥\n\n\"" + (lastResult.roast || "").substring(0, 100) + "...\"\n\nTry it: https://unhinged.email";
+  window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
 });
 document.getElementById("shareCopy").addEventListener("click", async () => {
   if (!lastResult) return;
-  try { await navigator.clipboard.writeText("I scored " + Number(lastResult.score).toFixed(1) + "/10 on UnHinged 🔥 — unhinged.email"); document.getElementById("shareCopy").textContent = "Copied ✓"; setTimeout(() => document.getElementById("shareCopy").textContent = "Copy score", 2000); } catch {}
+  var s = Number(lastResult.score).toFixed(1);
+  try { await navigator.clipboard.writeText("I scored " + s + "/10 on UnHinged 🔥 — \"" + (lastResult.roast || "").substring(0, 80) + "\" — unhinged.email"); document.getElementById("shareCopy").textContent = "Copied ✓"; setTimeout(function(){document.getElementById("shareCopy").textContent = "Copy"}, 2000); } catch {}
 });
 
 // Upgrade handler
