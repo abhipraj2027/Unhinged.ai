@@ -2,206 +2,104 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>I scored on the UnHinged scale 🔥</title>
-<meta property="og:title" content="How unhinged is YOUR email? 🔥">
-<meta property="og:description" content="AI scores your emails 1-10 on the unhinged scale, roasts you, then rewrites them. Try free.">
-<meta property="og:url" content="https://unhinged.email">
+<script>
+// Dynamic OG tags from URL params
+var p = new URLSearchParams(window.location.search);
+var s = parseFloat(p.get("score")) || 5;
+var r = p.get("roast") || "";
+var k = p.get("risk") || "";
+document.title = "I scored " + s.toFixed(1) + "/10 on UnHinged 🔥";
+</script>
+<meta property="og:title" content="I scored on the UnHinged email scale 🔥">
+<meta property="og:description" content="AI scores your emails 1-10 on the unhinged scale, roasts you, then rewrites them professionally.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://unhinged.email/share">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#0A0A0A;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0A0A0A;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px}
 a{color:#FF5C00;text-decoration:none}
-.card-wrap{max-width:480px;width:100%}
-.card{background:linear-gradient(145deg,#141416,#0A0A0A);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px 28px;position:relative;overflow:hidden}
-.card::before{content:"";position:absolute;top:0;left:30px;right:30px;height:2px;background:linear-gradient(90deg,transparent,#FF5C00,transparent);opacity:.6}
-.card::after{content:"";position:absolute;bottom:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(255,92,0,.08),transparent);border-radius:50%}
-.brand{display:flex;align-items:center;gap:10px;margin-bottom:24px}
-.brand-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#FF5C00,#FF3B30);display:flex;align-items:center;justify-content:center;font-size:18px}
-.brand-name{font-size:16px;font-weight:900;letter-spacing:-.01em}
-.brand-sub{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:#52525B;margin-top:2px}
-.score-area{text-align:center;padding:10px 0 20px}
-.score-label{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#71717A;margin-bottom:8px;font-family:ui-monospace,monospace}
-.score{font-size:80px;font-weight:900;line-height:1;letter-spacing:-.04em}
-.score .of{font-size:24px;color:#52525B;margin-left:4px}
-.track{margin:12px auto 0;width:80%;height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
-.track i{display:block;height:100%;border-radius:999px}
-.roast-box{margin-top:20px;padding:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px}
-.roast-label{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#FF5C00;margin-bottom:6px;font-family:ui-monospace,monospace}
-.roast-text{font-size:14px;line-height:1.6;color:#E4E4E7}
-.cta{margin-top:20px;text-align:center}
-.cta-text{font-size:11px;color:#52525B;letter-spacing:.1em}
-.cta-url{font-size:14px;font-weight:800;color:#FF5C00;letter-spacing:.02em}
-.watermark{position:absolute;bottom:10px;right:16px;font-size:9px;color:#27272A;letter-spacing:.15em;font-family:ui-monospace,monospace}
-
-/* Actions below card */
-.actions{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.share-btn{padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:transform .12s}
-.share-btn:hover{transform:translateY(-2px)}
-.share-btn.tw{background:#1DA1F2;color:#fff}
-.share-btn.li{background:#0A66C2;color:#fff}
-.share-btn.wa{background:#25D366;color:#fff}
-.share-btn.dl{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.12)}
-.share-btn.try{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;font-weight:800;padding:12px 24px}
-.or{margin-top:16px;font-size:12px;color:#52525B}
+h1{font-size:20px;font-weight:900;margin:16px 0 4px;text-align:center}
+.subtitle{font-size:13px;color:#71717A;text-align:center;margin-bottom:20px}
+.card-img{max-width:600px;width:100%;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06)}
+.actions{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.btn{padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px;transition:transform .12s;text-decoration:none}
+.btn:hover{transform:translateY(-2px)}
+.btn.tw{background:#000;color:#fff;border:1px solid #333}
+.btn.li{background:#0A66C2;color:#fff}
+.btn.wa{background:#25D366;color:#fff}
+.btn.dl{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15)}
+.btn.cta{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;font-weight:800;padding:14px 28px;font-size:15px}
+.divider{margin:20px 0;font-size:12px;color:#3F3F46}
+.loading{padding:40px;text-align:center;color:#52525B}
 </style>
 </head>
 <body>
-<div class="card-wrap">
-  <div class="card" id="shareCard">
-    <div class="brand">
-      <div class="brand-icon">🔥</div>
-      <div><div class="brand-name">UnHinged</div><div class="brand-sub">Email Tone Checker</div></div>
-    </div>
-    <div class="score-area">
-      <div class="score-label">Unhinged Score</div>
-      <div class="score" id="cardScore" style="color:#FACC15">5.0<span class="of">/10</span></div>
-      <div class="track"><i id="cardTrack" style="width:50%;background:#FACC15"></i></div>
-    </div>
-    <div class="roast-box">
-      <div class="roast-label">AI Roast</div>
-      <div class="roast-text" id="cardRoast">Your email needs more chaos.</div>
-    </div>
-    <div class="cta">
-      <div class="cta-text">How unhinged is YOUR email?</div>
-      <div class="cta-url">unhinged.email</div>
-    </div>
-    <div class="watermark">unhinged.email</div>
-  </div>
 
-  <div class="actions">
-    <button class="share-btn tw" onclick="shareTwitter()">𝕏 Twitter</button>
-    <button class="share-btn li" onclick="shareLinkedIn()">in LinkedIn</button>
-    <button class="share-btn wa" onclick="shareWhatsApp()">💬 WhatsApp</button>
-    <button class="share-btn dl" onclick="downloadCard()">⬇ Save Image</button>
-  </div>
-  <div class="or">or</div>
-  <div class="actions">
-    <a href="/" class="share-btn try">🔥 Try it yourself — free</a>
-  </div>
+<h1>🔥 My UnHinged Score</h1>
+<div class="subtitle">How unhinged is YOUR email?</div>
+
+<div class="loading" id="loadState">Generating your roast card...</div>
+<img class="card-img" id="cardImg" style="display:none" alt="UnHinged Roast Card">
+
+<div class="actions" id="actions" style="display:none">
+  <button class="btn dl" onclick="downloadCard()">⬇ Save Image</button>
+  <button class="btn tw" onclick="shareTwitter()">𝕏 Post on X</button>
+  <button class="btn wa" onclick="shareWhatsApp()">💬 WhatsApp</button>
+  <button class="btn li" onclick="shareLinkedIn()">in LinkedIn</button>
 </div>
+
+<div class="divider">— or —</div>
+
+<a href="/" class="btn cta">🔥 Roast YOUR email — free</a>
 
 <script>
 var params = new URLSearchParams(window.location.search);
 var score = parseFloat(params.get("score")) || 5.0;
-var roast = params.get("roast") || "Your email needs more chaos.";
+var roast = params.get("roast") || "This email needs more chaos.";
+var risk = params.get("risk") || "";
 
-function scoreColor(s) { return s < 4 ? "#22C55E" : s < 8 ? "#FACC15" : "#EF4444"; }
-var col = scoreColor(score);
+// Generate card image from server
+var imgUrl = "/api/share-image?score=" + score + "&roast=" + encodeURIComponent(roast) + "&risk=" + encodeURIComponent(risk);
+var img = document.getElementById("cardImg");
 
-document.getElementById("cardScore").innerHTML = score.toFixed(1) + '<span class="of">/10</span>';
-document.getElementById("cardScore").style.color = col;
-if (score >= 8) document.getElementById("cardScore").innerHTML += ' 🔥';
-document.getElementById("cardTrack").style.width = (score * 10) + "%";
-document.getElementById("cardTrack").style.background = col;
-document.getElementById("cardRoast").textContent = roast.substring(0, 200);
-document.title = "I scored " + score.toFixed(1) + "/10 on the UnHinged scale 🔥";
+img.onload = function() {
+  document.getElementById("loadState").style.display = "none";
+  img.style.display = "block";
+  document.getElementById("actions").style.display = "flex";
+};
+img.onerror = function() {
+  document.getElementById("loadState").textContent = "Card generation failed. Try refreshing.";
+};
+img.src = imgUrl;
+
+// Update OG image dynamically (for crawlers that execute JS)
+var ogImg = document.createElement("meta");
+ogImg.setAttribute("property", "og:image");
+ogImg.setAttribute("content", window.location.origin + imgUrl);
+document.head.appendChild(ogImg);
+
+function downloadCard() {
+  var a = document.createElement("a");
+  a.href = imgUrl;
+  a.download = "unhinged-score-" + score.toFixed(1) + ".png";
+  a.click();
+}
 
 function shareTwitter() {
-  var text = "I just scored " + score.toFixed(1) + "/10 on the UnHinged email scale 🔥\n\n\"" + roast.substring(0, 100) + "...\"\n\nHow unhinged is YOUR email? Try free →";
+  var text = "I scored " + score.toFixed(1) + "/10 on the UnHinged email scale 🔥\n\n\"" + roast.substring(0, 120) + "...\"\n\nHow unhinged is YOUR email? Try free →";
   window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent("https://unhinged.email"), "_blank");
 }
 
-function shareLinkedIn() {
-  window.open("https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent("https://unhinged.email/share?score=" + score + "&roast=" + encodeURIComponent(roast.substring(0, 100))), "_blank");
-}
-
 function shareWhatsApp() {
-  var text = "I scored " + score.toFixed(1) + "/10 on UnHinged 🔥\n\n\"" + roast.substring(0, 100) + "...\"\n\nTry it: https://unhinged.email";
+  var text = "I scored " + score.toFixed(1) + "/10 on UnHinged 🔥\n\n\"" + roast.substring(0, 120) + "...\"\n\nRoast YOUR email free → https://unhinged.email";
   window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
 }
 
-function downloadCard() {
-  var card = document.getElementById("shareCard");
-  // Use canvas to capture
-  var canvas = document.createElement("canvas");
-  canvas.width = 960; canvas.height = 640;
-  var ctx = canvas.getContext("2d");
-  // Draw background
-  ctx.fillStyle = "#0A0A0A";
-  ctx.fillRect(0, 0, 960, 640);
-  // Border
-  ctx.strokeStyle = "rgba(255,255,255,0.08)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(20, 20, 920, 600, 20);
-  ctx.stroke();
-  // Top gradient line
-  var grad = ctx.createLinearGradient(200, 22, 760, 22);
-  grad.addColorStop(0, "transparent");
-  grad.addColorStop(0.5, "#FF5C00");
-  grad.addColorStop(1, "transparent");
-  ctx.strokeStyle = grad;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(200, 22);
-  ctx.lineTo(760, 22);
-  ctx.stroke();
-  // Brand
-  ctx.fillStyle = "#FF5C00";
-  ctx.font = "900 22px Inter, sans-serif";
-  ctx.fillText("🔥 UnHinged", 60, 80);
-  ctx.fillStyle = "#52525B";
-  ctx.font = "500 10px monospace";
-  ctx.fillText("EMAIL TONE CHECKER", 60, 98);
-  // Score label
-  ctx.fillStyle = "#71717A";
-  ctx.font = "500 12px monospace";
-  ctx.textAlign = "center";
-  ctx.fillText("UNHINGED SCORE", 480, 160);
-  // Score
-  ctx.fillStyle = col;
-  ctx.font = "900 96px Inter, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(score.toFixed(1), 440, 270);
-  ctx.fillStyle = "#52525B";
-  ctx.font = "900 32px Inter, sans-serif";
-  ctx.fillText("/10", 540, 270);
-  if (score >= 8) { ctx.font = "48px sans-serif"; ctx.fillText("🔥", 590, 270); }
-  // Track bar
-  ctx.fillStyle = "rgba(255,255,255,0.06)";
-  ctx.beginPath(); ctx.roundRect(240, 290, 480, 10, 5); ctx.fill();
-  ctx.fillStyle = col;
-  ctx.beginPath(); ctx.roundRect(240, 290, 480 * (score/10), 10, 5); ctx.fill();
-  // Roast box
-  ctx.fillStyle = "rgba(255,255,255,0.03)";
-  ctx.beginPath(); ctx.roundRect(60, 330, 840, 200, 12); ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.roundRect(60, 330, 840, 200, 12); ctx.stroke();
-  ctx.fillStyle = "#FF5C00";
-  ctx.font = "700 10px monospace";
-  ctx.textAlign = "left";
-  ctx.fillText("AI ROAST", 84, 362);
-  // Roast text (word wrap)
-  ctx.fillStyle = "#E4E4E7";
-  ctx.font = "400 16px Inter, sans-serif";
-  var words = roast.substring(0, 200).split(" ");
-  var line = ""; var y = 392; var maxW = 790;
-  for (var i = 0; i < words.length; i++) {
-    var test = line + words[i] + " ";
-    if (ctx.measureText(test).width > maxW) {
-      ctx.fillText(line, 84, y);
-      line = words[i] + " ";
-      y += 24;
-      if (y > 510) { ctx.fillText(line + "...", 84, y); break; }
-    } else { line = test; }
-    if (i === words.length - 1) ctx.fillText(line, 84, y);
-  }
-  // CTA
-  ctx.fillStyle = "#52525B";
-  ctx.font = "400 12px Inter, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("How unhinged is YOUR email?", 480, 570);
-  ctx.fillStyle = "#FF5C00";
-  ctx.font = "800 18px Inter, sans-serif";
-  ctx.fillText("unhinged.email", 480, 596);
-  // Download
-  var link = document.createElement("a");
-  link.download = "unhinged-score-" + score.toFixed(1) + ".png";
-  link.href = canvas.toDataURL("image/png");
-  link.click();
+function shareLinkedIn() {
+  window.open("https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(window.location.href), "_blank");
 }
 </script>
 </body>

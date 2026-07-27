@@ -487,6 +487,14 @@ async def teams_page(request: Request):
     return templates.TemplateResponse("teams.html", {"request": request})
 
 # -- Admin --
+@app.get("/api/share-image")
+async def share_image(score: float = 5.0, roast: str = "", risk: str = ""):
+    from card_generator import generate_roast_card
+    from fastapi.responses import Response
+    png_bytes = generate_roast_card(score, roast, risk)
+    return Response(content=png_bytes, media_type="image/png",
+                    headers={"Cache-Control": "public, max-age=86400"})
+
 @app.get("/share", response_class=HTMLResponse)
 async def share_page(request: Request):
     return templates.TemplateResponse("share.html", {"request": request})
