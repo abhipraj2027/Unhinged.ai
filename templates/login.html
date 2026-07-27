@@ -150,6 +150,12 @@ async function doLogin() {
     });
     const d = await r.json();
     if (!r.ok) return showErr(d.detail || d.message || "Login failed");
+    // Check if user came from extension (URL param)
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("from") === "extension") {
+      showOk("Login successful! Go back to your Gmail tab — the extension will recognize your account now. You can close this tab.");
+      return;
+    }
     if (d.team) {
       window.location.href = "/teams";
     } else {
@@ -171,8 +177,13 @@ async function doSignup() {
     });
     const d = await r.json();
     if (!r.ok) return showErr(d.detail || d.message || "Signup failed");
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("from") === "extension") {
+      showOk("Account created! Go back to Gmail and login in the extension with this email + password.");
+      return;
+    }
     showOk("Account created! Redirecting...");
-    setTimeout(() => window.location.href = "/", 1000);
+    setTimeout(function(){ window.location.href = "/"; }, 1000);
   } catch(e) { showErr("Network error. Try again."); }
 }
 
@@ -190,8 +201,13 @@ async function doJoin() {
     });
     const d = await r.json();
     if (!r.ok) return showErr(d.detail || d.message || "Failed to join");
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("from") === "extension") {
+      showOk("Joined " + (d.team_name || "team") + "! Pro activated. Go back to Gmail and login in the extension with this email + password.");
+      return;
+    }
     showOk("Joined " + (d.team_name || "team") + "! You now have Pro access. Redirecting...");
-    setTimeout(() => window.location.href = "/teams", 1500);
+    setTimeout(function(){ window.location.href = "/teams"; }, 1500);
   } catch(e) { showErr("Network error. Try again."); }
 }
 
