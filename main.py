@@ -472,6 +472,10 @@ async def team_members(team_id: int, request: Request):
 async def team_leaderboard(team_id: int, days: int = 7):
     return db.get_leaderboard(team_id, days)
 
+@app.get("/api/teams/{team_id}/awards")
+async def team_awards(team_id: int):
+    return db.get_team_awards(team_id)
+
 @app.get("/api/teams/my-team")
 async def my_team(email: str):
     email = email.strip().lower()
@@ -480,7 +484,8 @@ async def my_team(email: str):
         return {"has_team": False}
     members = db.get_team_members(team["id"])
     leaderboard = db.get_leaderboard(team["id"])
-    return {"has_team": True, "team": team, "members": members, "leaderboard": leaderboard}
+    awards = db.get_team_awards(team["id"])
+    return {"has_team": True, "team": team, "members": members, "leaderboard": leaderboard, "awards": awards}
 
 @app.get("/teams", response_class=HTMLResponse)
 async def teams_page(request: Request):

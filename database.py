@@ -344,15 +344,142 @@ def log_scan(email, score):
         db.execute("INSERT INTO scan_log(email,score) VALUES(?,?)", (email, score))
 
 def get_leaderboard(team_id, days=7):
+    """Get basic per-user stats for the team."""
     cutoff = time.time() - days * 86400
     with get_db() as db:
         rows = db.execute("""SELECT sl.email,
             COUNT(*) as total_scans,
             ROUND(AVG(sl.score),1) as avg_score,
-            ROUND(MAX(sl.score),1) as max_score
+            ROUND(MAX(sl.score),1) as max_score,
+            ROUND(MIN(sl.score),1) as min_score
             FROM scan_log sl
             JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
             WHERE sl.scanned_at > ?
             GROUP BY sl.email
-            ORDER BY avg_score DESC""", (team_id, cutoff)).fetchall()
+            ORDER BY total_scans DESC""", (team_id, cutoff)).fetchall()
         return [dict(r) for r in rows]
+
+def get_team_awards(team_id):
+    """Generate weekly awards for the team."""
+    now = time.time()
+    this_week = now - 7 * 86400
+    last_week_start = now - 14 * 86400
+
+    with get_db() as db:
+        # This week stats per user
+        this_week_stats = db.execute("""SELECT sl.email,
+            COUNT(*) as scans,
+            ROUND(AVG(sl.score),1) as avg,
+            ROUND(MAX(sl.score),1) as peak,
+            ROUND(MIN(sl.score),1) as lowest
+            FROM scan_log sl
+            JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
+            WHERE sl.scanned_at > ?
+            GROUP BY sl.email""", (team_id, this_week)).fetchall()
+        this_week_stats = [dict(r) for r in this_week_stats]
+
+        if not this_week_stats:
+            return {"awards": [], "team_avg": 0, "total_scans": 0}
+
+        # Last week stats per user (for improvement calc)
+        last_week_stats = db.execute("""SELECT sl.email,
+            ROUND(AVG(sl.score),1) as avg
+            FROM scan_log sl
+            JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
+            WHERE sl.scanned_at > ? AND sl.scanned_at <= ?
+            GROUP BY sl.email""", (team_id, last_week_start, this_week)).fetchall()
+        last_week_map = {r["email"]: r["avg"] for r in last_week_stats}
+
+        # Team overall this week
+        team_row = db.execute("""SELECT
+            ROUND(AVG(sl.score),1) as team_avg,
+            COUNT(*) as total_scans
+            FROM scan_log sl
+            JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
+            WHERE sl.scanned_at > ?""", (team_id, this_week)).fetchone()
+
+        # Team overall last week
+        last_team = db.execute("""SELECT ROUND(AVG(sl.score),1) as team_avg
+            FROM scan_log sl
+            JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
+            WHERE sl.scanned_at > ? AND sl.scanned_at <= ?""", (team_id, last_week_start, this_week)).fetchone()
+
+        awards = []
+
+        # 1. Zen Master — lowest average score
+        zen = min(this_week_stats, key=lambda x: x["avg"])
+        if zen["scans"] >= 2:
+            awards.append({
+                "type": "zen_master",
+                "emoji": "🧘",
+                "title": "Zen Master",
+                "subtitle": "Most professional communicator",
+                "email": zen["email"],
+                "stat": str(zen["avg"]) + " avg score",
+                "description": "Lowest average score this week. Suspiciously calm."
+            })
+
+        # 2. Most Improved — biggest score drop from last week
+        improvements = []
+        for u in this_week_stats:
+            if u["email"] in last_week_map:
+                drop = last_week_map[u["email"]] - u["avg"]
+                if drop > 0:
+                    improvements.append({**u, "improvement": round(drop, 1)})
+        if improvements:
+            best = max(improvements, key=lambda x: x["improvement"])
+            awards.append({
+                "type": "most_improved",
+                "emoji": "📈",
+                "title": "Most Improved",
+                "subtitle": "Biggest tone improvement",
+                "email": best["email"],
+                "stat": "-" + str(best["improvement"]) + " points",
+                "description": "Score dropped " + str(best["improvement"]) + " points from last week. Growth!"
+            })
+
+        # 3. Heat Check — highest single score (funny one-off)
+        peak_user = max(this_week_stats, key=lambda x: x["peak"])
+        if peak_user["peak"] >= 5:
+            awards.append({
+                "type": "heat_check",
+                "emoji": "🔥",
+                "title": "Heat Check",
+                "subtitle": "Most unhinged moment",
+                "email": peak_user["email"],
+                "stat": str(peak_user["peak"]) + "/10 peak",
+                "description": "Everyone has that one email. This was theirs."
+            })
+
+        # 4. Power User — most scans
+        power = max(this_week_stats, key=lambda x: x["scans"])
+        if power["scans"] >= 3:
+            awards.append({
+                "type": "power_user",
+                "emoji": "⚡",
+                "title": "Power User",
+                "subtitle": "Takes communication seriously",
+                "email": power["email"],
+                "stat": str(power["scans"]) + " scans",
+                "description": "Most scans this week. Checking every email before sending."
+            })
+
+        # 5. Team Tone trend
+        team_avg = team_row["team_avg"] if team_row else 0
+        last_avg = last_team["team_avg"] if last_team and last_team["team_avg"] else None
+        team_trend = None
+        if last_avg and team_avg:
+            diff = round(last_avg - team_avg, 1)
+            if diff > 0:
+                team_trend = {"direction": "improving", "diff": diff}
+            elif diff < 0:
+                team_trend = {"direction": "worsening", "diff": abs(diff)}
+
+        return {
+            "awards": awards,
+            "team_avg": team_avg,
+            "total_scans": team_row["total_scans"] if team_row else 0,
+            "last_week_avg": last_avg,
+            "team_trend": team_trend,
+            "members": this_week_stats,
+        }

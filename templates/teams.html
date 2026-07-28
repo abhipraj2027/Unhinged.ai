@@ -76,10 +76,35 @@ a{color:#FF5C00;text-decoration:none}
 <!-- Dashboard (hidden until team found) -->
 <div id="dashboard" style="display:none">
 
-  <!-- Leaderboard -->
+  <!-- Team Tone Overview -->
+  <div class="section" id="toneSection">
+    <h2 style="color:#FF5C00">📊 Team Tone This Week</h2>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+      <div style="flex:1;min-width:120px;text-align:center;padding:14px;background:rgba(0,0,0,.3);border-radius:10px">
+        <div id="teamAvg" style="font-size:32px;font-weight:900;color:#FACC15">—</div>
+        <div style="font-size:10px;color:#71717A;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">Team Average</div>
+      </div>
+      <div style="flex:1;min-width:120px;text-align:center;padding:14px;background:rgba(0,0,0,.3);border-radius:10px">
+        <div id="teamScans" style="font-size:32px;font-weight:900;color:#FF5C00">—</div>
+        <div style="font-size:10px;color:#71717A;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">Total Scans</div>
+      </div>
+      <div style="flex:1;min-width:120px;text-align:center;padding:14px;background:rgba(0,0,0,.3);border-radius:10px">
+        <div id="teamTrend" style="font-size:32px;font-weight:900;color:#22C55E">—</div>
+        <div style="font-size:10px;color:#71717A;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">vs Last Week</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly Awards -->
   <div class="section">
-    <h2>🏆 Most Unhinged This Week</h2>
-    <div id="leaderboard"><div style="text-align:center;color:#52525B;padding:20px">No scans yet this week</div></div>
+    <h2 style="color:#FACC15">🏆 Weekly Awards</h2>
+    <div id="awardsBox"><div style="text-align:center;color:#52525B;padding:20px">No scans yet this week. Start scanning to unlock awards!</div></div>
+  </div>
+
+  <!-- Member Activity -->
+  <div class="section">
+    <h2 style="color:#22C55E">👥 Member Activity</h2>
+    <div id="memberActivity"><div style="text-align:center;color:#52525B;padding:20px">No activity yet</div></div>
   </div>
 
   <!-- Team info -->
@@ -166,22 +191,76 @@ function renderDashboard(d) {
     document.getElementById("inviteCode").textContent = team.invite_code;
   }
 
-  // Leaderboard
-  const lbEl = document.getElementById("leaderboard");
-  if (lb && lb.length > 0) {
-    let html = "";
-    lb.forEach((entry, i) => {
-      const rankClass = i === 0 ? "g" : i === 1 ? "s" : i === 2 ? "b" : "";
-      const crown = i === 0 ? " 👑" : "";
-      const scoreColor = entry.avg_score < 4 ? "#22C55E" : entry.avg_score < 8 ? "#FACC15" : "#EF4444";
-      html += '<div class="lb-row">';
-      html += '<div class="lb-rank ' + rankClass + '">' + (i+1) + '</div>';
-      html += '<div class="lb-email">' + entry.email.replace(/@.*/, "@...") + crown + '</div>';
-      html += '<div style="text-align:right"><div class="lb-score" style="color:' + scoreColor + '">' + entry.avg_score + '</div>';
-      html += '<div class="lb-meta">avg · ' + entry.total_scans + ' scans · max ' + entry.max_score + '</div></div>';
-      html += '</div>';
-    });
-    lbEl.innerHTML = html;
+  // Awards
+  var awards = d.awards || {};
+  var aList = awards.awards || [];
+  var teamAvg = awards.team_avg || 0;
+  var totalScans = awards.total_scans || 0;
+  var trend = awards.team_trend;
+
+  // Tone overview
+  document.getElementById("teamAvg").textContent = teamAvg || "—";
+  document.getElementById("teamAvg").style.color = teamAvg < 4 ? "#22C55E" : teamAvg < 8 ? "#FACC15" : "#EF4444";
+  document.getElementById("teamScans").textContent = totalScans || "—";
+
+  if (trend) {
+    if (trend.direction === "improving") {
+      document.getElementById("teamTrend").textContent = "↓" + trend.diff;
+      document.getElementById("teamTrend").style.color = "#22C55E";
+    } else {
+      document.getElementById("teamTrend").textContent = "↑" + trend.diff;
+      document.getElementById("teamTrend").style.color = "#EF4444";
+    }
+  }
+
+  // Awards cards
+  var awEl = document.getElementById("awardsBox");
+  if (aList.length > 0) {
+    var ahtml = "";
+    var bgColors = {
+      "zen_master": "rgba(34,197,94,.06)",
+      "most_improved": "rgba(59,130,246,.06)",
+      "heat_check": "rgba(255,92,0,.06)",
+      "power_user": "rgba(168,85,247,.06)"
+    };
+    var borderColors = {
+      "zen_master": "rgba(34,197,94,.2)",
+      "most_improved": "rgba(59,130,246,.2)",
+      "heat_check": "rgba(255,92,0,.2)",
+      "power_user": "rgba(168,85,247,.2)"
+    };
+    for (var a = 0; a < aList.length; a++) {
+      var aw = aList[a];
+      var bg = bgColors[aw.type] || "rgba(255,255,255,.03)";
+      var bd = borderColors[aw.type] || "rgba(255,255,255,.06)";
+      ahtml += "<div style="background:" + bg + ";border:1px solid " + bd + ";border-radius:12px;padding:16px;margin-bottom:10px">";
+      ahtml += "<div style="display:flex;justify-content:space-between;align-items:center">";
+      ahtml += "<div><span style="font-size:24px;margin-right:8px">" + aw.emoji + "</span><strong style="font-size:15px">" + aw.title + "</strong></div>";
+      ahtml += "<div style="font-size:18px;font-weight:900;color:#FF5C00">" + aw.stat + "</div>";
+      ahtml += "</div>";
+      ahtml += "<div style="font-size:12px;color:#A1A1AA;margin-top:6px">" + aw.email.replace(/@.*/, "@...") + " — " + aw.subtitle + "</div>";
+      ahtml += "<div style="font-size:11px;color:#52525B;margin-top:4px;font-style:italic">" + aw.description + "</div>";
+      ahtml += "</div>";
+    }
+    awEl.innerHTML = ahtml;
+  }
+
+  // Member activity table
+  var mStats = awards.members || [];
+  var maEl = document.getElementById("memberActivity");
+  if (mStats.length > 0) {
+    var mhtml = "";
+    for (var m = 0; m < mStats.length; m++) {
+      var ms = mStats[m];
+      var sColor = ms.avg < 4 ? "#22C55E" : ms.avg < 8 ? "#FACC15" : "#EF4444";
+      mhtml += "<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">";
+      mhtml += "<div style="font-size:13px;font-family:JetBrains Mono,monospace">" + ms.email.replace(/@.*/, "@...") + "</div>";
+      mhtml += "<div style="display:flex;gap:16px;align-items:center;font-size:12px">";
+      mhtml += "<span style="color:#71717A">" + ms.scans + " scans</span>";
+      mhtml += "<span style="color:" + sColor + ";font-weight:700;font-size:16px">" + ms.avg + "</span>";
+      mhtml += "</div></div>";
+    }
+    maEl.innerHTML = mhtml;
   }
 
   // Members
