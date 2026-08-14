@@ -297,6 +297,13 @@ def get_team_for_email(email):
             WHERE tm.email=? AND t.is_active=1 LIMIT 1""", (email,)).fetchone()
         return dict(row) if row else None
 
+def get_member_role(team_id, email):
+    """Return the caller's role ('owner'/'member') within a team, or None if not a member."""
+    email = email.strip().lower()
+    with get_db() as db:
+        row = db.execute("SELECT role FROM team_members WHERE team_id=? AND email=?", (team_id, email)).fetchone()
+        return row["role"] if row else None
+
 def get_team_members(team_id):
     with get_db() as db:
         rows = db.execute("""SELECT tm.email, tm.role, tm.joined_at,

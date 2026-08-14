@@ -219,6 +219,24 @@ def _get_current_user(request: Request):
     except pyjwt.InvalidTokenError:
         return None
 
+def _team_owner_ok(request: Request, team_id: int) -> bool:
+    """True if the caller is the site admin, OR is logged in and owns this specific team."""
+    if _admin_ok(request):
+        return True
+    email = _get_current_user(request)
+    if not email:
+        return False
+    return db.get_member_role(team_id, email) == "owner"
+
+def _team_member_ok(request: Request, team_id: int) -> bool:
+    """True if the caller is the site admin, OR is logged in and belongs to this team (any role)."""
+    if _admin_ok(request):
+        return True
+    email = _get_current_user(request)
+    if not email:
+        return False
+    return db.get_member_role(team_id, email) is not None
+
 class SignupReq(BaseModel):
     email: str
     password: str
@@ -449,13 +467,13 @@ async def create_team(body: TeamCreateReq, request: Request):
 
 @app.post("/api/teams/add-member")
 async def add_member(body: TeamMemberReq, request: Request):
-    if not _admin_ok(request): raise HTTPException(401)
+    if not _team_owner_ok(request, body.team_id): raise HTTPException(401)
     result = db.add_team_member(body.team_id, body.email)
     return result
 
 @app.post("/api/teams/remove-member")
 async def remove_member(body: TeamMemberReq, request: Request):
-    if not _admin_ok(request): raise HTTPException(401)
+    if not _team_owner_ok(request, body.team_id): raise HTTPException(401)
     return db.remove_team_member(body.team_id, body.email)
 
 @app.get("/api/teams/list")
@@ -469,23 +487,30 @@ async def team_members(team_id: int, request: Request):
     return db.get_team_members(team_id)
 
 @app.get("/api/teams/{team_id}/leaderboard")
-async def team_leaderboard(team_id: int, days: int = 7):
+async def team_leaderboard(team_id: int, request: Request, days: int = 7):
+    if not _team_member_ok(request, team_id): raise HTTPException(401)
     return db.get_leaderboard(team_id, days)
 
 @app.get("/api/teams/{team_id}/awards")
-async def team_awards(team_id: int):
+async def team_awards(team_id: int, request: Request):
+    if not _team_member_ok(request, team_id): raise HTTPException(401)
     return db.get_team_awards(team_id)
 
 @app.get("/api/teams/my-team")
-async def my_team(email: str):
-    email = email.strip().lower()
+async def my_team(request: Request):
+    email = _get_current_user(request)
+    if not email:
+        raise HTTPException(401, "Login required")
     team = db.get_team_for_email(email)
     if not team:
         return {"has_team": False}
+    is_owner = team.get("owner_email") == email
+    if not is_owner:
+        team = {k: v for k, v in team.items() if k != "invite_code"}
     members = db.get_team_members(team["id"])
     leaderboard = db.get_leaderboard(team["id"])
     awards = db.get_team_awards(team["id"])
-    return {"has_team": True, "team": team, "members": members, "leaderboard": leaderboard, "awards": awards}
+    return {"has_team": True, "your_email": email, "team": team, "members": members, "leaderboard": leaderboard, "awards": awards}
 
 @app.get("/teams", response_class=HTMLResponse)
 async def teams_page(request: Request):
