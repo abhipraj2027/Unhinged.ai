@@ -45,6 +45,11 @@ class VerifyReq(BaseModel):
     razorpay_payment_id: str
     razorpay_subscription_id: str
     razorpay_signature: str
+class TeamCheckoutReq(BaseModel):
+    name: str
+    seats: int = 5
+class RotateCodeReq(BaseModel):
+    team_id: int
 
 def _admin_ok(req):
     try: return signer.loads(req.cookies.get("admin_token","")) == "admin_ok"
@@ -153,6 +158,36 @@ async def create_sub(body: SubReq):
         log.error(f"Razorpay error: {e}")
         raise HTTPException(500,f"Payment error: {e}")
 
+@app.post("/api/teams/checkout")
+async def team_checkout(body: TeamCheckoutReq, request: Request):
+    email = _get_current_user(request)
+    if not email:
+        raise HTTPException(401, "Please log in first")
+    if db.get_team_for_email(email):
+        raise HTTPException(400, "You're already on a team")
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(400, "Team name required")
+    seats = max(2, min(int(body.seats), 200))
+    plan = os.getenv("RAZORPAY_TEAM_PLAN_ID")
+    if not plan: raise HTTPException(500, "Team plan not configured")
+    try:
+        c = _rz()
+        sub = c.subscription.create({
+            "plan_id": plan, "total_count": 12, "quantity": seats,
+            "notes": {"type": "team", "owner_email": email, "team_name": name, "seats": str(seats)}
+        })
+        return {"subscription_id": sub["id"], "payment_link": sub.get("short_url", "")}
+    except Exception as e:
+        log.error(f"Razorpay team checkout error: {e}")
+        raise HTTPException(500, f"Payment error: {e}")
+
+@app.post("/api/teams/rotate-code")
+async def rotate_code(body: RotateCodeReq, request: Request):
+    if not _team_owner_ok(request, body.team_id): raise HTTPException(401)
+    new_code = db.rotate_invite_code(body.team_id)
+    return {"success": True, "invite_code": new_code}
+
 @app.post("/api/razorpay-webhook")
 async def rz_webhook(request: Request):
     body = await request.body()
@@ -166,17 +201,37 @@ async def rz_webhook(request: Request):
     payload = json.loads(body)
     event = payload.get("event","")
     log.info(f"Webhook: {event}")
-    email = None
-    try:
-        email = payload["payload"]["subscription"]["entity"]["notes"].get("email")
-        if not email: email = payload["payload"]["payment"]["entity"].get("email")
+
+    notes = {}
+    try: notes = payload["payload"]["subscription"]["entity"].get("notes") or {}
     except: pass
-    if not email: return {"status":"ok"}
     sub_id = pay_id = None
     try: sub_id = payload["payload"]["subscription"]["entity"]["id"]
     except: pass
     try: pay_id = payload["payload"]["payment"]["entity"]["id"]
     except: pass
+
+    # -- Team subscriptions (per-seat) --
+    if notes.get("type") == "team":
+        owner_email = notes.get("owner_email")
+        team_name = notes.get("team_name", "My Team")
+        try: seats = int(notes.get("seats", 5))
+        except: seats = 5
+        if owner_email and sub_id:
+            if event in ("subscription.activated", "subscription.charged"):
+                db.create_team_from_subscription(team_name, owner_email, seats, sub_id)
+                log.info(f"Team ON: {team_name} ({owner_email}), sub {sub_id}")
+            elif event in ("subscription.cancelled", "subscription.completed"):
+                db.deactivate_team_by_sub(sub_id)
+                log.info(f"Team OFF: sub {sub_id}")
+        return {"status": "ok"}
+
+    # -- Individual Pro subscriptions --
+    email = notes.get("email")
+    if not email:
+        try: email = payload["payload"]["payment"]["entity"].get("email")
+        except: pass
+    if not email: return {"status":"ok"}
     if event in ("subscription.activated","subscription.charged","payment.captured"):
         db.set_pro(email, sub_id, pay_id)
         log.info(f"Pro ON: {email}")
@@ -503,7 +558,7 @@ async def my_team(request: Request):
         raise HTTPException(401, "Login required")
     team = db.get_team_for_email(email)
     if not team:
-        return {"has_team": False}
+        return {"has_team": False, "your_email": email}
     is_owner = team.get("owner_email") == email
     if not is_owner:
         team = {k: v for k, v in team.items() if k != "invite_code"}
@@ -609,4 +664,4 @@ async def admin_stats(request: Request):
 @app.get("/admin/env-check")
 async def admin_env(request: Request):
     if not _admin_ok(request): raise HTTPException(401)
-    return {k:("set" if os.getenv(k) else "missing") for k in ["GROQ_API_KEY","ANTHROPIC_API_KEY","OPENAI_API_KEY","GOOGLE_API_KEY","RAZORPAY_KEY_ID","RAZORPAY_KEY_SECRET","RAZORPAY_WEBHOOK_SECRET","RAZORPAY_PLAN_ID"]}
+    return {k:("set" if os.getenv(k) else "missing") for k in ["GROQ_API_KEY","ANTHROPIC_API_KEY","OPENAI_API_KEY","GOOGLE_API_KEY","RAZORPAY_KEY_ID","RAZORPAY_KEY_SECRET","RAZORPAY_WEBHOOK_SECRET","RAZORPAY_PLAN_ID","RAZORPAY_TEAM_PLAN_ID"]}

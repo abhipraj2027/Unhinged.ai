@@ -253,11 +253,12 @@ def _gen_invite_code():
     import random, string
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
-def create_team(name, owner_email, seats=5):
+def create_team(name, owner_email, seats=5, razorpay_sub_id=None):
     owner_email = owner_email.strip().lower()
     code = _gen_invite_code()
     with get_db() as db:
-        db.execute("INSERT INTO teams(name,owner_email,seats,invite_code) VALUES(?,?,?,?)", (name, owner_email, seats, code))
+        db.execute("INSERT INTO teams(name,owner_email,seats,invite_code,razorpay_sub_id) VALUES(?,?,?,?,?)",
+                   (name, owner_email, seats, code, razorpay_sub_id))
         team = db.execute("SELECT * FROM teams WHERE owner_email=? ORDER BY id DESC LIMIT 1", (owner_email,)).fetchone()
         team_id = team["id"]
         db.execute("INSERT OR IGNORE INTO team_members(team_id,email,role) VALUES(?,?,?)", (team_id, owner_email, "owner"))
@@ -267,6 +268,42 @@ def create_team(name, owner_email, seats=5):
             db.execute("INSERT INTO users(email) VALUES(?)", (owner_email,))
         db.execute("UPDATE users SET is_pro=1, expires_at=? WHERE email=?", (time.time()+365*86400, owner_email))
         return dict(team)
+
+def get_team_by_sub_id(sub_id):
+    with get_db() as db:
+        row = db.execute("SELECT * FROM teams WHERE razorpay_sub_id=?", (sub_id,)).fetchone()
+        return dict(row) if row else None
+
+def create_team_from_subscription(name, owner_email, seats, sub_id):
+    """Idempotent: only creates a team the first time this subscription is seen (webhooks can fire more than once)."""
+    existing = get_team_by_sub_id(sub_id)
+    if existing:
+        return existing
+    return create_team(name, owner_email, seats, razorpay_sub_id=sub_id)
+
+def deactivate_team_by_sub(sub_id):
+    """On subscription cancel/expiry: deactivate the team and drop Pro for members who don't have their own individual subscription."""
+    team = get_team_by_sub_id(sub_id)
+    if not team:
+        return {"error": "Team not found for this subscription"}
+    with get_db() as db:
+        db.execute("UPDATE teams SET is_active=0 WHERE id=?", (team["id"],))
+        members = db.execute("SELECT email FROM team_members WHERE team_id=?", (team["id"],)).fetchall()
+        for m in members:
+            row = db.execute("SELECT razorpay_sub_id FROM users WHERE email=?", (m["email"],)).fetchone()
+            if not (row and row["razorpay_sub_id"]):
+                db.execute("UPDATE users SET is_pro=0 WHERE email=?", (m["email"],))
+    return {"success": True}
+
+def rotate_invite_code(team_id):
+    new_code = _gen_invite_code()
+    with get_db() as db:
+        for _ in range(5):
+            clash = db.execute("SELECT id FROM teams WHERE invite_code=?", (new_code,)).fetchone()
+            if not clash: break
+            new_code = _gen_invite_code()
+        db.execute("UPDATE teams SET invite_code=? WHERE id=?", (new_code, team_id))
+    return new_code
 
 def add_team_member(team_id, email):
     email = email.strip().lower()
@@ -286,7 +323,11 @@ def remove_team_member(team_id, email):
     email = email.strip().lower()
     with get_db() as db:
         db.execute("DELETE FROM team_members WHERE team_id=? AND email=? AND role!='owner'", (team_id, email))
-        db.execute("UPDATE users SET is_pro=0 WHERE email=?", (email,))
+        # Only strip Pro if they don't have their own individual Razorpay subscription —
+        # otherwise removing someone from a team would silently cancel access they paid for themselves.
+        row = db.execute("SELECT razorpay_sub_id FROM users WHERE email=?", (email,)).fetchone()
+        if not (row and row["razorpay_sub_id"]):
+            db.execute("UPDATE users SET is_pro=0 WHERE email=?", (email,))
         return {"success": True}
 
 def get_team_for_email(email):
