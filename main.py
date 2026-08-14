@@ -15,8 +15,33 @@ app = FastAPI(title="UnHinged API", version="2.5.0")
 templates = Jinja2Templates(directory="templates")
 
 APP_URL = os.getenv("APP_URL","http://localhost:8000")
-ADMIN_PW = os.getenv("ADMIN_PASSWORD","unhinged2026")
-signer = URLSafeSerializer(os.getenv("SECRET_KEY","unhinged-secret"))
+
+# -- IP-based rate limit (defense-in-depth on top of per-email daily quota,
+#    since the email on /api/analyze is self-reported and unverified) --
+_ip_hits = {}
+_IP_LIMIT = 15       # requests
+_IP_WINDOW = 3600     # seconds
+
+def _get_client_ip(request: Request) -> str:
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+def _ip_rate_limited(ip: str) -> bool:
+    now = time.time()
+    hits = [t for t in _ip_hits.get(ip, []) if now - t < _IP_WINDOW]
+    hits.append(now)
+    _ip_hits[ip] = hits
+    return len(hits) > _IP_LIMIT
+
+ADMIN_PW = os.getenv("ADMIN_PASSWORD")
+if not ADMIN_PW:
+    raise RuntimeError("ADMIN_PASSWORD env var not set — refusing to start with an insecure default")
+_SECRET_KEY = os.getenv("SECRET_KEY")
+if not _SECRET_KEY:
+    raise RuntimeError("SECRET_KEY env var not set — refusing to start with an insecure default")
+signer = URLSafeSerializer(_SECRET_KEY)
 
 app.add_middleware(CORSMiddleware,
     allow_origin_regex=r"(https://mail\.google\.com|chrome-extension://.*|" + re.escape(APP_URL) + r")",
@@ -67,7 +92,10 @@ async def health():
 
 # -- Analyze --
 @app.post("/api/analyze")
-async def analyze(body: AnalyzeReq):
+async def analyze(body: AnalyzeReq, request: Request):
+    ip = _get_client_ip(request)
+    if _ip_rate_limited(ip):
+        raise HTTPException(429, "Too many requests from this network. Try again later.")
     email = body.email.strip().lower()
     message = body.message.strip()
     if not email or not message:
@@ -250,7 +278,7 @@ async def verify_pay(body: VerifyReq):
 
 # -- Auth (JWT + bcrypt) --
 import jwt as pyjwt
-JWT_SECRET = os.getenv("SECRET_KEY", "unhinged-secret")
+JWT_SECRET = _SECRET_KEY
 JWT_ALGO = "HS256"
 JWT_EXP = 30 * 86400  # 30 days
 
@@ -385,7 +413,9 @@ async def cancel_sub(request: Request):
 async def delete_account(request: Request):
     email = _get_current_user(request)
     if not email: raise HTTPException(401, "Not authenticated")
-    # Cancel any subscription first
+    team = db.get_team_for_email(email)
+    if team and team.get("owner_email") == email:
+        raise HTTPException(400, "You own a team — delete or transfer it before deleting your account")
     user = db.get_user(email)
     if user and user.get("razorpay_sub_id"):
         try: _rz().subscription.cancel(user["razorpay_sub_id"])
@@ -615,6 +645,7 @@ async def admin_search(request: Request, email: str = ""):
     user = db.get_user(email)
     if not user: return []
     user = db.reset_daily(email) or user
+    user = {k: v for k, v in user.items() if k != "password_hash"}
     team = db.get_team_for_email(email)
     return {**user, "team": dict(team) if team else None, "scans_remaining": db.remaining(user)}
 

@@ -196,11 +196,11 @@ def has_password(email):
         return bool(r and r["password_hash"])
 
 def create_reset_token(email):
-    import random, string
+    import secrets, string
     email = email.strip().lower()
     user = get_user(email)
     if not user: return None
-    token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+    token = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
     expires = time.time() + 3600  # 1 hour
     with get_db() as db:
         db.execute("""CREATE TABLE IF NOT EXISTS reset_tokens (
