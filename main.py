@@ -346,7 +346,7 @@ async def signup(body: SignupReq):
     db.set_password(email, body.password)
     token = _make_token(email)
     profile = db.get_user_profile(email)
-    resp = JSONResponse({"success": True, **profile})
+    resp = JSONResponse({"success": True, "token": token, **profile})
     resp.set_cookie("auth_token", token, httponly=True, samesite="lax", secure=True, max_age=JWT_EXP)
     return resp
 
@@ -357,7 +357,7 @@ async def login(body: LoginReq):
         raise HTTPException(401, "Invalid email or password")
     token = _make_token(email)
     profile = db.get_user_profile(email)
-    resp = JSONResponse({"success": True, **profile})
+    resp = JSONResponse({"success": True, "token": token, **profile})
     resp.set_cookie("auth_token", token, httponly=True, samesite="lax", secure=True, max_age=JWT_EXP)
     return resp
 
@@ -512,7 +512,7 @@ async def join_team(body: JoinTeamReq):
     if result.get("error"):
         raise HTTPException(400, result["error"])
     token = _make_token(email)
-    resp = JSONResponse({"success": True, "team_name": result.get("team_name"), "is_pro": True})
+    resp = JSONResponse({"success": True, "token": token, "team_name": result.get("team_name"), "is_pro": True})
     resp.set_cookie("auth_token", token, httponly=True, samesite="lax", secure=True, max_age=JWT_EXP)
     return resp
 
