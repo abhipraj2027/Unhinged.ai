@@ -448,14 +448,10 @@ async def forgot_password(body: ForgotReq):
     if not token:
         return {"success": True, "message": "If this email exists, a reset link has been sent."}
     reset_url = f"{APP_URL}/reset-password?token={token}"
-    # Try to send email
     sent = await _send_reset_email(email, reset_url)
-    if sent:
-        log.info(f"Reset email sent to {email}")
-        return {"success": True, "message": "Reset link sent to your email. Check inbox and spam."}
-    else:
-        log.warning(f"Could not send reset email to {email}, showing link directly")
-        return {"success": True, "message": "Reset link sent to your email. Check inbox and spam.", "reset_url": reset_url}
+    if not sent:
+        log.warning(f"Could not send reset email to {email} — RESEND_API_KEY missing or send failed")
+    return {"success": True, "message": "If this email exists, a reset link has been sent."}
 
 async def _send_reset_email(to_email, reset_url):
     """Send reset email via Resend or SMTP."""

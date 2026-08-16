@@ -234,13 +234,7 @@ async function doForgot() {
       body: JSON.stringify({email: email})
     });
     var d = await r.json();
-    if (d.reset_url) {
-      // No email service — show link directly (dev mode)
-      showOk("No email service configured. Use this link: ");
-      document.getElementById("okBox").innerHTML += '<br><a href="' + d.reset_url + '" style="color:#FF5C00;word-break:break-all;font-size:11px">' + d.reset_url + '</a>';
-    } else {
-      showOk(d.message || "If this email exists, a reset link has been sent. Check your inbox.");
-    }
+    showOk(d.message || "If this email exists, a reset link has been sent. Check your inbox.");
   } catch(e) {
     showErr("Network error. Try again.");
   }
