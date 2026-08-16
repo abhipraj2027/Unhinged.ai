@@ -353,9 +353,9 @@ footer a:hover{color:#FF5C00}
   function renderAcctBar() {
     if (auth.loggedIn) {
       const tn = teamName(status);
-      let html = "👤 <b>" + auth.email + "</b>";
+      let html = "👤 <b>" + esc(auth.email) + "</b>";
       if (tn) {
-        html += " · 👥 <b>" + tn + "</b> <a id=\"teamLink\">Dashboard →</a>";
+        html += " · 👥 <b>" + esc(tn) + "</b> <a id=\"teamLink\">Dashboard →</a>";
       } else {
         html += " <a id=\"acctLink\">Account →</a>";
       }
@@ -373,7 +373,7 @@ footer a:hover{color:#FF5C00}
         showToast("Logged out");
       });
     } else {
-      acctBar.innerHTML = "🔓 Guest: <b>" + guestEmail + "</b> <a id=\"loginSwitch\">Login for team access →</a>";
+      acctBar.innerHTML = "🔓 Guest: <b>" + esc(guestEmail) + "</b> <a id=\"loginSwitch\">Login for team access →</a>";
       shadow.getElementById("loginSwitch").addEventListener("click", () => {
         mainUI.style.display = "none";
         gate.style.display = "block";

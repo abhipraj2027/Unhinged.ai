@@ -197,6 +197,8 @@ async def team_checkout(body: TeamCheckoutReq, request: Request):
     name = body.name.strip()
     if not name:
         raise HTTPException(400, "Team name required")
+    if len(name) > 60:
+        raise HTTPException(400, "Team name too long (max 60 characters)")
     seats = max(2, min(int(body.seats), 200))
     plan = os.getenv("RAZORPAY_TEAM_PLAN_ID")
     if not plan: raise HTTPException(500, "Team plan not configured")

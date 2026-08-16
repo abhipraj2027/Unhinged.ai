@@ -152,6 +152,10 @@ const API = window.location.origin;
 let teamData = null;
 let myEmail = "";
 
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 checkTeam();
 
 async function checkTeam() {
@@ -274,7 +278,7 @@ function renderDashboard(d) {
       ahtml += "<div><span style='font-size:24px;margin-right:8px'>" + aw.emoji + "</span><strong style='font-size:15px'>" + aw.title + "</strong></div>";
       ahtml += "<div style='font-size:18px;font-weight:900;color:#FF5C00'>" + aw.stat + "</div>";
       ahtml += "</div>";
-      ahtml += "<div style='font-size:12px;color:#A1A1AA;margin-top:6px'>" + aw.email.replace(/@.*/, "@...") + " — " + aw.subtitle + "</div>";
+      ahtml += "<div style='font-size:12px;color:#A1A1AA;margin-top:6px'>" + esc(aw.email.replace(/@.*/, "@...")) + " — " + aw.subtitle + "</div>";
       ahtml += "<div style='font-size:11px;color:#52525B;margin-top:4px;font-style:italic'>" + aw.description + "</div>";
       ahtml += "</div>";
     }
@@ -290,7 +294,7 @@ function renderDashboard(d) {
       var ms = mStats[m];
       var sColor = ms.avg < 4 ? "#22C55E" : ms.avg < 8 ? "#FACC15" : "#EF4444";
       mhtml += "<div style='display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)'>";
-      mhtml += "<div style='font-size:13px;font-family:JetBrains Mono,monospace'>" + ms.email.replace(/@.*/, "@...") + "</div>";
+      mhtml += "<div style='font-size:13px;font-family:JetBrains Mono,monospace'>" + esc(ms.email.replace(/@.*/, "@...")) + "</div>";
       mhtml += "<div style='display:flex;gap:16px;align-items:center;font-size:12px'>";
       mhtml += "<span style='color:#71717A'>" + ms.scans + " scans</span>";
       mhtml += "<span style='color:" + sColor + ";font-weight:700;font-size:16px'>" + ms.avg + "</span>";
@@ -305,15 +309,18 @@ function renderDashboard(d) {
   members.forEach(m => {
     const isOwner = m.role === "owner";
     memHtml += '<div class="member">';
-    memHtml += '<div><div class="member-email">' + m.email + '</div><div style="font-size:10px;color:#52525B;margin-top:2px">' + m.scans_used + ' total scans</div></div>';
+    memHtml += '<div><div class="member-email">' + esc(m.email) + '</div><div style="font-size:10px;color:#52525B;margin-top:2px">' + m.scans_used + ' total scans</div></div>';
     memHtml += '<div style="display:flex;align-items:center;gap:8px">';
     memHtml += '<span class="member-role ' + (isOwner ? "role-owner" : "role-member") + '">' + m.role + '</span>';
     if (!isOwner && team.owner_email === myEmail) {
-      memHtml += '<button class="btn sm red" onclick="removeMember(\'' + m.email + '\')">Remove</button>';
+      memHtml += '<button class="btn sm red" data-remove-email="' + esc(m.email) + '">Remove</button>';
     }
     memHtml += '</div></div>';
   });
   memEl.innerHTML = memHtml;
+  memEl.querySelectorAll("[data-remove-email]").forEach(btn => {
+    btn.addEventListener("click", () => removeMember(btn.dataset.removeEmail));
+  });
 
   // Show add member if owner
   if (team.owner_email === myEmail) {
