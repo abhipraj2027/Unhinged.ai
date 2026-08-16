@@ -12,7 +12,7 @@ from llm import call_llm, parse_roast_json
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("unhinged")
 
-app = FastAPI(title="UnHinged API", version="2.5.0")
+app = FastAPI(title="UnHinged API", version="2.5.0", docs_url=None, redoc_url=None, openapi_url=None)
 templates = Jinja2Templates(directory="templates")
 
 APP_URL = os.getenv("APP_URL","http://localhost:8000")
@@ -653,7 +653,7 @@ async def admin_login(request: Request):
     body = await request.json()
     if body.get("password") != ADMIN_PW: raise HTTPException(401,"Wrong password")
     resp = JSONResponse({"success":True})
-    resp.set_cookie("admin_token", signer.dumps("admin_ok"), httponly=True, samesite="lax", max_age=86400)
+    resp.set_cookie("admin_token", signer.dumps("admin_ok"), httponly=True, samesite="lax", secure=True, max_age=86400)
     return resp
 
 @app.get("/admin/config")
