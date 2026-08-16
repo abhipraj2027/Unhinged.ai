@@ -1,4 +1,5 @@
 import os, json, time, asyncio, re, logging
+import httpx
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -474,8 +475,6 @@ async def _send_reset_email(to_email, reset_url):
     # No email service configured — log the URL
     log.info(f"RESET LINK (no email service): {reset_url}")
     return False
-
-import httpx as _httpx
 
 @app.post("/api/auth/reset-password")
 async def reset_password(body: ResetReq):
