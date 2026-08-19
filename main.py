@@ -86,6 +86,26 @@ def _admin_ok(req):
 async def landing(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/robots.txt", response_class=HTMLResponse)
+async def robots():
+    return HTMLResponse(
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /admin\n"
+        "Disallow: /account\n"
+        "Disallow: /teams\n"
+        "Disallow: /api/\n"
+        f"Sitemap: {APP_URL}/sitemap.xml\n",
+        media_type="text/plain",
+    )
+
+@app.get("/sitemap.xml")
+async def sitemap():
+    pages = ["/", "/login", "/privacy", "/terms"]
+    urls = "".join(f"<url><loc>{APP_URL}{p}</loc></url>" for p in pages)
+    xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    return HTMLResponse(xml, media_type="application/xml")
+
 @app.get("/api/health")
 async def health():
     cfg = db.get_config()
