@@ -157,8 +157,17 @@ async def analyze(body: AnalyzeReq, request: Request):
         raise HTTPException(500, f"Model error: {e}")
     except ConnectionError as e:
         raise HTTPException(429, str(e))
+    except httpx.TimeoutException as e:
+        log.error(f"LLM timeout: {e}")
+        raise HTTPException(504, "The AI took too long to respond. Please try again.")
+    except httpx.HTTPStatusError as e:
+        log.error(f"LLM HTTP error: {e.response.status_code} — {e.response.text[:300]}")
+        raise HTTPException(502, "The AI provider returned an error. Please try again.")
+    except httpx.RequestError as e:
+        log.error(f"LLM network error: {e}")
+        raise HTTPException(502, "Couldn't reach the AI provider. Please try again.")
     except Exception as e:
-        log.error(f"LLM error: {e}")
+        log.error(f"LLM error: {type(e).__name__}: {e}")
         raise HTTPException(500, "Analysis failed. Please try again.")
     roast = parse_roast_json(roast_raw)
     db.inc_scan(email)
