@@ -44,13 +44,23 @@ def init_db():
         for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''")]:
             try: db.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
             except: pass
-        rp = os.getenv("LLM_ROAST_PROVIDER","groq")
-        rm = os.getenv("LLM_ROAST_MODEL","llama-3.3-70b-versatile")
-        wp = os.getenv("LLM_REWRITE_PROVIDER","groq")
-        wm = os.getenv("LLM_REWRITE_MODEL","llama-3.3-70b-versatile")
+        # Free tier: cheap/fast Groq model (near-zero cost)
+        rp_free = os.getenv("LLM_ROAST_PROVIDER_FREE", os.getenv("LLM_ROAST_PROVIDER","groq"))
+        rm_free = os.getenv("LLM_ROAST_MODEL_FREE", os.getenv("LLM_ROAST_MODEL","openai/gpt-oss-120b"))
+        wp_free = os.getenv("LLM_REWRITE_PROVIDER_FREE", os.getenv("LLM_REWRITE_PROVIDER","groq"))
+        wm_free = os.getenv("LLM_REWRITE_MODEL_FREE", os.getenv("LLM_REWRITE_MODEL","openai/gpt-oss-120b"))
+        # Pro tier: premium models (Claude Haiku for roast personality, GPT-4o mini for rewrite precision)
+        rp_pro = os.getenv("LLM_ROAST_PROVIDER_PRO","anthropic")
+        rm_pro = os.getenv("LLM_ROAST_MODEL_PRO","claude-haiku-4-5-20251001")
+        wp_pro = os.getenv("LLM_REWRITE_PROVIDER_PRO","openai")
+        wm_pro = os.getenv("LLM_REWRITE_MODEL_PRO","gpt-4o-mini")
         defaults = {
-            "roast_provider":rp, "roast_model":rm, "roast_max_tokens":"600", "roast_temperature":"1.0",
-            "rewrite_provider":wp, "rewrite_model":wm, "rewrite_max_tokens":"800", "rewrite_temperature":"0.7",
+            "roast_provider_free":rp_free, "roast_model_free":rm_free,
+            "roast_provider_pro":rp_pro, "roast_model_pro":rm_pro,
+            "roast_max_tokens":"600", "roast_temperature":"1.0",
+            "rewrite_provider_free":wp_free, "rewrite_model_free":wm_free,
+            "rewrite_provider_pro":wp_pro, "rewrite_model_pro":wm_pro,
+            "rewrite_max_tokens":"800", "rewrite_temperature":"0.7",
             "roast_prompt":ROAST_PROMPT, "rewrite_prompt":REWRITE_PROMPT,
         }
         # Teams & auth tables

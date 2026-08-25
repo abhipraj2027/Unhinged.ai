@@ -72,8 +72,14 @@ select{appearance:none;cursor:pointer}
 <div class="section">
   <h2>🔥 Roast Model</h2>
   <div class="row">
-    <div><label>Provider</label><select id="rProv"><option>groq</option><option>anthropic</option><option>openai</option><option>google</option></select></div>
-    <div><label>Model</label><input id="rModel"></div>
+    <div><label>Free Tier — Provider</label><select id="rProvFree"><option>groq</option><option>anthropic</option><option>openai</option><option>google</option></select></div>
+    <div><label>Free Tier — Model</label><input id="rModelFree"></div>
+  </div>
+  <div class="row">
+    <div><label>Pro Tier — Provider</label><select id="rProvPro"><option>anthropic</option><option>groq</option><option>openai</option><option>google</option></select></div>
+    <div><label>Pro Tier — Model</label><input id="rModelPro"></div>
+  </div>
+  <div class="row">
     <div><label>Max Tokens</label><input id="rTokens" type="number"></div>
   </div>
   <label>Temperature: <span id="rTempVal">1.0</span></label>
@@ -87,8 +93,14 @@ select{appearance:none;cursor:pointer}
 <div class="section">
   <h2>✍️ Rewrite Model</h2>
   <div class="row">
-    <div><label>Provider</label><select id="wProv"><option>groq</option><option>openai</option><option>anthropic</option><option>google</option></select></div>
-    <div><label>Model</label><input id="wModel"></div>
+    <div><label>Free Tier — Provider</label><select id="wProvFree"><option>groq</option><option>openai</option><option>anthropic</option><option>google</option></select></div>
+    <div><label>Free Tier — Model</label><input id="wModelFree"></div>
+  </div>
+  <div class="row">
+    <div><label>Pro Tier — Provider</label><select id="wProvPro"><option>openai</option><option>groq</option><option>anthropic</option><option>google</option></select></div>
+    <div><label>Pro Tier — Model</label><input id="wModelPro"></div>
+  </div>
+  <div class="row">
     <div><label>Max Tokens</label><input id="wTokens" type="number"></div>
   </div>
   <label>Temperature: <span id="wTempVal">0.7</span></label>
@@ -103,6 +115,8 @@ select{appearance:none;cursor:pointer}
   <h2>🧪 Test Panel</h2>
   <label>Paste test email</label>
   <textarea id="testMsg" rows="4" placeholder="Paste an email to test with current config..."></textarea>
+  <label>Test as tier</label>
+  <select id="testTier" style="margin-bottom:14px"><option value="pro">Pro</option><option value="free">Free</option></select>
   <button class="btn" onclick="runTest()">Run Test</button>
   <div class="result" id="testResult" style="display:none"></div>
 </div>
@@ -179,14 +193,18 @@ async function loadAll(){
 }
 
 function loadConfig(c){
-  document.getElementById('rProv').value=c.roast_provider||'groq';
-  document.getElementById('rModel').value=c.roast_model||'';
+  document.getElementById('rProvFree').value=c.roast_provider_free||'groq';
+  document.getElementById('rModelFree').value=c.roast_model_free||'';
+  document.getElementById('rProvPro').value=c.roast_provider_pro||'anthropic';
+  document.getElementById('rModelPro').value=c.roast_model_pro||'';
   document.getElementById('rTokens').value=c.roast_max_tokens||600;
   document.getElementById('rTemp').value=c.roast_temperature||1;
   document.getElementById('rTempVal').textContent=c.roast_temperature||1;
   document.getElementById('rPrompt').value=c.roast_prompt||'';
-  document.getElementById('wProv').value=c.rewrite_provider||'groq';
-  document.getElementById('wModel').value=c.rewrite_model||'';
+  document.getElementById('wProvFree').value=c.rewrite_provider_free||'groq';
+  document.getElementById('wModelFree').value=c.rewrite_model_free||'';
+  document.getElementById('wProvPro').value=c.rewrite_provider_pro||'openai';
+  document.getElementById('wModelPro').value=c.rewrite_model_pro||'';
   document.getElementById('wTokens').value=c.rewrite_max_tokens||800;
   document.getElementById('wTemp').value=c.rewrite_temperature||0.7;
   document.getElementById('wTempVal').textContent=c.rewrite_temperature||0.7;
@@ -202,8 +220,10 @@ async function saveCfg(key,val){
 }
 async function saveRoast(){
   const ok=await Promise.all([
-    saveCfg('roast_provider',document.getElementById('rProv').value),
-    saveCfg('roast_model',document.getElementById('rModel').value),
+    saveCfg('roast_provider_free',document.getElementById('rProvFree').value),
+    saveCfg('roast_model_free',document.getElementById('rModelFree').value),
+    saveCfg('roast_provider_pro',document.getElementById('rProvPro').value),
+    saveCfg('roast_model_pro',document.getElementById('rModelPro').value),
     saveCfg('roast_max_tokens',document.getElementById('rTokens').value),
     saveCfg('roast_temperature',document.getElementById('rTemp').value),
     saveCfg('roast_prompt',document.getElementById('rPrompt').value),
@@ -212,8 +232,10 @@ async function saveRoast(){
 }
 async function saveRewrite(){
   const ok=await Promise.all([
-    saveCfg('rewrite_provider',document.getElementById('wProv').value),
-    saveCfg('rewrite_model',document.getElementById('wModel').value),
+    saveCfg('rewrite_provider_free',document.getElementById('wProvFree').value),
+    saveCfg('rewrite_model_free',document.getElementById('wModelFree').value),
+    saveCfg('rewrite_provider_pro',document.getElementById('wProvPro').value),
+    saveCfg('rewrite_model_pro',document.getElementById('wModelPro').value),
     saveCfg('rewrite_max_tokens',document.getElementById('wTokens').value),
     saveCfg('rewrite_temperature',document.getElementById('wTemp').value),
     saveCfg('rewrite_prompt',document.getElementById('wPrompt').value),
@@ -264,7 +286,8 @@ async function runTest(){
   if(!msg)return toast('Paste a test email first','err');
   const el=document.getElementById('testResult');
   el.style.display='block';el.textContent='Analyzing...';
-  const r=await fetch(`${API}/admin/test-analyze`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
+  const tier=document.getElementById('testTier')?document.getElementById('testTier').value:'pro';
+  const r=await fetch(`${API}/admin/test-analyze`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,tier:tier})});
   const d=await r.json();
   el.textContent=JSON.stringify(d,null,2);
 }

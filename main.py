@@ -66,6 +66,7 @@ class CfgReq(BaseModel):
     config_value: str
 class TestReq(BaseModel):
     message: str
+    tier: str = "pro"  # "free" or "pro"
 class VerifyReq(BaseModel):
     email: str
     razorpay_payment_id: str
@@ -109,7 +110,9 @@ async def sitemap():
 @app.get("/api/health")
 async def health():
     cfg = db.get_config()
-    return {"status":"ok","version":"2.5.0","provider":cfg.get("roast_provider","?"),"model":cfg.get("roast_model","?")}
+    return {"status":"ok","version":"2.6.0",
+            "free_provider":cfg.get("roast_provider_free","?"),"free_model":cfg.get("roast_model_free","?"),
+            "pro_provider":cfg.get("roast_provider_pro","?"),"pro_model":cfg.get("roast_model_pro","?")}
 
 # -- Analyze --
 @app.post("/api/analyze")
@@ -133,17 +136,18 @@ async def analyze(body: AnalyzeReq, request: Request):
         msg = f"Daily limit reached ({lim}/day). Resets midnight UTC." if user.get("is_pro") else f"Free daily limit reached ({lim}/day). Upgrade to Pro for 30/day."
         return JSONResponse(status_code=402, content={"error":"limit_reached","message":msg,"is_pro":bool(user.get("is_pro")),"limit":lim})
     cfg = db.get_config()
-    rp = cfg.get("roast_provider","groq")
-    rm = cfg.get("roast_model","llama-3.3-70b-versatile")
+    tier = "pro" if user.get("is_pro") else "free"
+    rp = cfg.get(f"roast_provider_{tier}","groq")
+    rm = cfg.get(f"roast_model_{tier}","openai/gpt-oss-120b")
     rprompt = cfg.get("roast_prompt","")
     rmax = int(cfg.get("roast_max_tokens","600"))
     rtemp = float(cfg.get("roast_temperature","1.0"))
-    wp = cfg.get("rewrite_provider","groq")
-    wm = cfg.get("rewrite_model","llama-3.3-70b-versatile")
+    wp = cfg.get(f"rewrite_provider_{tier}","groq")
+    wm = cfg.get(f"rewrite_model_{tier}","openai/gpt-oss-120b")
     wprompt = cfg.get("rewrite_prompt","")
     wmax = int(cfg.get("rewrite_max_tokens","800"))
     wtemp = float(cfg.get("rewrite_temperature","0.7"))
-    log.info(f"Analyze — email:{email}, len:{len(message)}, roast:{rp}/{rm}, rewrite:{wp}/{wm}")
+    log.info(f"Analyze — email:{email}, tier:{tier}, len:{len(message)}, roast:{rp}/{rm}, rewrite:{wp}/{wm}")
     try:
         roast_raw, rewrite_raw = await asyncio.gather(
             call_llm(rp, rm, rprompt, f"Analyze this email and roast it. Return ONLY valid JSON:\n\n---\n{message}\n---", rmax, rtemp),
@@ -702,16 +706,17 @@ async def admin_set_cfg(body: CfgReq, request: Request):
 async def admin_test(body: TestReq, request: Request):
     if not _admin_ok(request): raise HTTPException(401)
     cfg = db.get_config()
+    tier = body.tier if body.tier in ("free","pro") else "pro"
     t0 = time.time()
     try:
         roast_raw, rewrite_raw = await asyncio.gather(
-            call_llm(cfg.get("roast_provider","groq"),cfg.get("roast_model","llama-3.3-70b-versatile"),cfg.get("roast_prompt",""),f"Analyze and roast. Return ONLY JSON:\n\n---\n{body.message}\n---",int(cfg.get("roast_max_tokens","600")),float(cfg.get("roast_temperature","1.0"))),
-            call_llm(cfg.get("rewrite_provider","groq"),cfg.get("rewrite_model","llama-3.3-70b-versatile"),cfg.get("rewrite_prompt",""),f"Rewrite professionally:\n\n---\n{body.message}\n---",int(cfg.get("rewrite_max_tokens","800")),float(cfg.get("rewrite_temperature","0.7"))),
+            call_llm(cfg.get(f"roast_provider_{tier}","groq"),cfg.get(f"roast_model_{tier}","openai/gpt-oss-120b"),cfg.get("roast_prompt",""),f"Analyze and roast. Return ONLY JSON:\n\n---\n{body.message}\n---",int(cfg.get("roast_max_tokens","600")),float(cfg.get("roast_temperature","1.0"))),
+            call_llm(cfg.get(f"rewrite_provider_{tier}","groq"),cfg.get(f"rewrite_model_{tier}","openai/gpt-oss-120b"),cfg.get("rewrite_prompt",""),f"Rewrite professionally:\n\n---\n{body.message}\n---",int(cfg.get("rewrite_max_tokens","800")),float(cfg.get("rewrite_temperature","0.7"))),
         )
     except Exception as e:
         return {"error":str(e)}
     roast = parse_roast_json(roast_raw)
-    return {**roast,"rewrite":rewrite_raw.strip(),"time_ms":int((time.time()-t0)*1000),"roast_model":cfg.get("roast_model"),"rewrite_model":cfg.get("rewrite_model")}
+    return {**roast,"rewrite":rewrite_raw.strip(),"time_ms":int((time.time()-t0)*1000),"tier":tier,"roast_model":cfg.get(f"roast_model_{tier}"),"rewrite_model":cfg.get(f"rewrite_model_{tier}")}
 
 @app.get("/admin/stats")
 async def admin_stats(request: Request):
