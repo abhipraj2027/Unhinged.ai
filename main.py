@@ -120,7 +120,14 @@ async def analyze(body: AnalyzeReq, request: Request):
     ip = _get_client_ip(request)
     if _ip_rate_limited(ip):
         raise HTTPException(429, "Too many requests from this network. Try again later.")
-    email = body.email.strip().lower()
+    # SECURITY: if the request carries a valid logged-in session, trust that
+    # identity over whatever email is in the request body — otherwise anyone
+    # could type a real Pro user's email here and ride their tier/quota
+    # without ever proving they own that address. Anonymous/no-login usage
+    # (the free email-capture flow on the landing page) is unaffected: with
+    # no session cookie, we fall back to the client-supplied email as before.
+    session_email = _get_current_user(request)
+    email = session_email if session_email else body.email.strip().lower()
     message = body.message.strip()
     if not email or not message:
         raise HTTPException(400, "Email and message required")
@@ -309,7 +316,21 @@ async def verify_pay(body: VerifyReq):
     try:
         _rz().utility.verify_payment_signature({"razorpay_payment_id":body.razorpay_payment_id,"razorpay_subscription_id":body.razorpay_subscription_id,"razorpay_signature":body.razorpay_signature})
     except: raise HTTPException(400,"Verification failed")
-    db.set_pro(body.email, body.razorpay_subscription_id, body.razorpay_payment_id)
+    # SECURITY: never trust the client-supplied email for who gets Pro.
+    # A valid signature only proves this payment_id/subscription_id pair is real —
+    # it says nothing about which email the request claims to be. Look up the
+    # email our own server recorded when this subscription was created in
+    # /api/create-subscription instead, so a genuine payment can't be replayed
+    # with a different email to grant free Pro to arbitrary accounts.
+    with db.get_db() as conn:
+        row = conn.execute("SELECT email FROM users WHERE razorpay_sub_id=?", (body.razorpay_subscription_id,)).fetchone()
+    if not row:
+        log.warning(f"verify-payment: unknown subscription_id {body.razorpay_subscription_id} (claimed email: {body.email})")
+        raise HTTPException(400, "Subscription not found. Please start checkout again.")
+    real_email = row["email"]
+    if real_email != body.email.strip().lower():
+        log.warning(f"verify-payment: email mismatch on sub {body.razorpay_subscription_id} — claimed {body.email}, actual {real_email}")
+    db.set_pro(real_email, body.razorpay_subscription_id, body.razorpay_payment_id)
     return {"success":True,"is_pro":True}
 
 # -- Auth (JWT + bcrypt) --
