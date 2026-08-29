@@ -113,6 +113,14 @@ a{color:#FF5C00;text-decoration:none}
 <script>
 const API = window.location.origin;
 
+(function initFromUrl() {
+  var params = new URLSearchParams(window.location.search);
+  var tab = params.get("tab");
+  if (tab === "signup" || tab === "join") {
+    window.addEventListener("DOMContentLoaded", function() { showTab(tab); });
+  }
+})();
+
 function showTab(tab) {
   document.getElementById("loginForm").style.display = tab === "login" ? "block" : "none";
   document.getElementById("signupForm").style.display = tab === "signup" ? "block" : "none";
@@ -156,7 +164,7 @@ async function doLogin() {
       showOk("Login successful! Go back to your Gmail tab — the extension will recognize your account now. You can close this tab.");
       return;
     }
-    if (d.team) {
+    if (d.team || params.get("intent") === "team") {
       window.location.href = "/teams";
     } else {
       window.location.href = "/";
@@ -183,7 +191,7 @@ async function doSignup() {
       return;
     }
     showOk("Account created! Redirecting...");
-    setTimeout(function(){ window.location.href = "/"; }, 1000);
+    setTimeout(function(){ window.location.href = (params.get("intent") === "team") ? "/teams" : "/"; }, 1000);
   } catch(e) { showErr("Network error. Try again."); }
 }
 
