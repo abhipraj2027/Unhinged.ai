@@ -75,6 +75,7 @@ class VerifyReq(BaseModel):
 class TeamCheckoutReq(BaseModel):
     name: str
     seats: int = 5
+    member_emails: list[str] = []
 class RotateCodeReq(BaseModel):
     team_id: int
 
@@ -240,6 +241,12 @@ async def team_checkout(body: TeamCheckoutReq, request: Request):
     if len(name) > 60:
         raise HTTPException(400, "Team name too long (max 60 characters)")
     seats = max(2, min(int(body.seats), 200))
+    member_emails = [e.strip().lower() for e in (body.member_emails or []) if e and e.strip()]
+    if len(member_emails) > seats - 1:
+        raise HTTPException(400, f"You've listed {len(member_emails)} members, but only {seats - 1} member seats are available (1 seat is you, the owner)")
+    for e in member_emails:
+        if "@" not in e or "." not in e.split("@")[-1]:
+            raise HTTPException(400, f"'{e}' doesn't look like a valid email")
     plan = os.getenv("RAZORPAY_TEAM_PLAN_ID")
     if not plan: raise HTTPException(500, "Team plan not configured")
     try:
@@ -248,6 +255,8 @@ async def team_checkout(body: TeamCheckoutReq, request: Request):
             "plan_id": plan, "total_count": 12, "quantity": seats,
             "notes": {"type": "team", "owner_email": email, "team_name": name, "seats": str(seats)}
         })
+        if member_emails:
+            db.stash_pending_team_members(sub["id"], member_emails)
         return {"subscription_id": sub["id"], "payment_link": sub.get("short_url", "")}
     except Exception as e:
         log.error(f"Razorpay team checkout error: {e}")
@@ -290,8 +299,16 @@ async def rz_webhook(request: Request):
         except: seats = 5
         if owner_email and sub_id:
             if event in ("subscription.activated", "subscription.charged"):
-                db.create_team_from_subscription(team_name, owner_email, seats, sub_id)
+                team = db.create_team_from_subscription(team_name, owner_email, seats, sub_id)
                 log.info(f"Team ON: {team_name} ({owner_email}), sub {sub_id}")
+                added = db.apply_pending_team_members(team["id"], sub_id)
+                for member_email in added:
+                    try:
+                        await _send_team_member_added_email(member_email, team_name)
+                    except Exception as e:
+                        log.warning(f"Could not send team-added email to {member_email}: {e}")
+                if added:
+                    log.info(f"Team {team_name}: auto-added {len(added)} members from checkout — {added}")
             elif event in ("subscription.cancelled", "subscription.completed"):
                 db.deactivate_team_by_sub(sub_id)
                 log.info(f"Team OFF: sub {sub_id}")
@@ -493,7 +510,28 @@ class ResetReq(BaseModel):
     token: str
     new_password: str
 
-@app.post("/api/auth/forgot-password")
+async def _send_team_member_added_email(to_email, team_name):
+    """Notify someone the founder added directly that they now have Pro access."""
+    resend_key = os.getenv("RESEND_API_KEY")
+    if not resend_key:
+        return False
+    login_url = f"{APP_URL}/login"
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post("https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                json={
+                    "from": os.getenv("FROM_EMAIL", "UnHinged <noreply@unhinged.email>"),
+                    "to": [to_email],
+                    "subject": f"You've been added to {team_name} on UnHinged — Pro unlocked 🔥",
+                    "html": f'<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:20px"><h2 style="color:#FF5C00">🔥 UnHinged</h2><p><strong>{team_name}</strong> added you to their team, and you now have Pro access — 30 scans/day, priority analysis, on the web and in the Gmail extension.</p><p><a href="{login_url}" style="display:inline-block;padding:12px 24px;background:#FF5C00;color:#000;text-decoration:none;border-radius:8px;font-weight:bold">Log in with this email to get started</a></p><p style="color:#999;font-size:12px">Use this email address ({to_email}) when you sign up or log in to activate your Pro access.</p></div>'
+                })
+            return r.status_code == 200
+    except Exception as e:
+        log.error(f"Team-added email error: {e}")
+        return False
+
+
 async def forgot_password(body: ForgotReq):
     email = body.email.strip().lower()
     if not db.get_user(email):

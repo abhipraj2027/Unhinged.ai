@@ -75,6 +75,11 @@ def init_db():
         db.execute("""CREATE TABLE IF NOT EXISTS scan_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, score REAL,
             scanned_at REAL DEFAULT (strftime('%s','now')))""")
+        # Emails a founder specifies at checkout time, before payment/team creation.
+        # Applied automatically once the webhook confirms the subscription is active.
+        db.execute("""CREATE TABLE IF NOT EXISTS pending_team_members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, razorpay_sub_id TEXT NOT NULL, email TEXT NOT NULL,
+            created_at REAL DEFAULT (strftime('%s','now')))""")
         # Add columns if upgrading
         for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("password_hash","TEXT")]:
             try: db.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
@@ -395,6 +400,40 @@ def join_team_by_code(email, invite_code):
             db.execute("INSERT INTO users(email) VALUES(?)", (email,))
         db.execute("UPDATE users SET is_pro=1, expires_at=? WHERE email=?", (time.time()+365*86400, email))
         return {"success": True, "team_name": team["name"]}
+
+def stash_pending_team_members(sub_id, emails):
+    """Save the member emails a founder specified at checkout, before payment clears."""
+    emails = [e.strip().lower() for e in emails if e and e.strip()]
+    if not emails: return
+    with get_db() as db:
+        for email in emails:
+            db.execute("INSERT INTO pending_team_members(razorpay_sub_id,email) VALUES(?,?)", (sub_id, email))
+
+def apply_pending_team_members(team_id, sub_id):
+    """Once a team is created from a confirmed subscription, add each pending
+    member directly (no invite-code redemption needed) and grant them Pro.
+    Returns the list of emails that were added, so the caller can notify them."""
+    added = []
+    with get_db() as db:
+        rows = db.execute("SELECT email FROM pending_team_members WHERE razorpay_sub_id=?", (sub_id,)).fetchall()
+        seats = db.execute("SELECT seats FROM teams WHERE id=?", (team_id,)).fetchone()["seats"]
+        current = db.execute("SELECT COUNT(*) c FROM team_members WHERE team_id=?", (team_id,)).fetchone()["c"]
+        for row in rows:
+            email = row["email"]
+            if current >= seats:
+                break  # seat cap reached — remaining pending emails are simply not added
+            existing = db.execute("SELECT id FROM team_members WHERE team_id=? AND email=?", (team_id, email)).fetchone()
+            if existing:
+                continue
+            db.execute("INSERT INTO team_members(team_id,email,role) VALUES(?,?,?)", (team_id, email, "member"))
+            existing_user = db.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
+            if not existing_user:
+                db.execute("INSERT INTO users(email) VALUES(?)", (email,))
+            db.execute("UPDATE users SET is_pro=1, expires_at=? WHERE email=?", (time.time()+365*86400, email))
+            added.append(email)
+            current += 1
+        db.execute("DELETE FROM pending_team_members WHERE razorpay_sub_id=?", (sub_id,))
+    return added
 
 def log_scan(email, score):
     email = email.strip().lower()

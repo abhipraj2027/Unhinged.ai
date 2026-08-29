@@ -75,13 +75,16 @@ a{color:#FF5C00;text-decoration:none}
 <!-- No team -->
 <div class="no-team" id="noTeam" style="display:none">
   <h2>No team found</h2>
-  <p>Join a team with an invite code from your admin, or start your own.</p>
-  <div style="max-width:320px;margin:20px auto;text-align:left;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:18px">
+  <p>Add your team members below, or start your own with just yourself for now.</p>
+  <div style="max-width:360px;margin:20px auto;text-align:left;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:18px">
     <label>Team name</label>
     <input type="text" id="newTeamName" placeholder="Acme Inc">
     <label>Seats (₹199/user/month)</label>
-    <input type="number" id="newTeamSeats" value="5" min="2" max="200">
-    <button class="btn" style="width:100%;margin-top:6px" onclick="startTeamCheckout()">Start Team →</button>
+    <input type="number" id="newTeamSeats" value="5" min="2" max="200" onchange="renderMemberInputs()">
+    <label style="margin-top:10px;display:block">Team members</label>
+    <p style="font-size:11px;color:#71717A;margin:2px 0 8px">Add each teammate's email — they'll get Pro instantly once your subscription starts. You (the owner) take 1 seat automatically.</p>
+    <div id="memberEmailInputs"></div>
+    <button class="btn" style="width:100%;margin-top:12px" onclick="startTeamCheckout()">Start Team →</button>
   </div>
   <a href="/" class="btn orange">← Back to UnHinged</a>
 </div>
@@ -172,6 +175,7 @@ async function checkTeam() {
     myEmail = d.your_email || "";
     if (!d.has_team) {
       document.getElementById("noTeam").style.display = "block";
+      renderMemberInputs();
       return;
     }
     teamData = d;
@@ -183,21 +187,40 @@ async function checkTeam() {
   }
 }
 
+function renderMemberInputs() {
+  const seats = parseInt(document.getElementById("newTeamSeats").value, 10) || 5;
+  const memberSlots = Math.max(0, seats - 1); // 1 seat is the owner
+  const container = document.getElementById("memberEmailInputs");
+  const existing = Array.from(container.querySelectorAll("input")).map(i => i.value);
+  container.innerHTML = "";
+  for (let i = 0; i < memberSlots; i++) {
+    const input = document.createElement("input");
+    input.type = "email";
+    input.placeholder = `teammate${i + 1}@company.com (optional)`;
+    input.style.marginBottom = "6px";
+    input.className = "member-email-input";
+    if (existing[i]) input.value = existing[i];
+    container.appendChild(input);
+  }
+}
+
 async function startTeamCheckout() {
   const name = document.getElementById("newTeamName").value.trim();
   const seats = parseInt(document.getElementById("newTeamSeats").value, 10) || 5;
+  const memberEmails = Array.from(document.querySelectorAll(".member-email-input"))
+    .map(i => i.value.trim()).filter(Boolean);
   if (!name) return toast("Enter a team name");
   try {
     const r = await fetch(API + "/api/teams/checkout", {
       method: "POST", credentials: "include",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({name: name, seats: seats})
+      body: JSON.stringify({name: name, seats: seats, member_emails: memberEmails})
     });
     const d = await r.json();
     if (!r.ok) return toast(d.detail || d.message || "Checkout failed");
     if (d.payment_link) {
       window.open(d.payment_link, "_blank");
-      toast("Complete payment in the new tab, then refresh this page.");
+      toast("Complete payment in the new tab. Your team members will get Pro automatically once it clears.");
     } else {
       toast("Payment error. Try again.");
     }
