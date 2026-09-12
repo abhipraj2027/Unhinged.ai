@@ -140,9 +140,13 @@ async def analyze(body: AnalyzeReq, request: Request):
     user = db.reset_daily(email) or user
     rem = db.remaining(user)
     lim = db.limit_for(user)
+    used_credit = False
     if rem <= 0:
-        msg = f"Daily limit reached ({lim}/day). Resets midnight UTC." if user.get("is_pro") else f"Free daily limit reached ({lim}/day). Upgrade to Pro for 30/day."
-        return JSONResponse(status_code=402, content={"error":"limit_reached","message":msg,"is_pro":bool(user.get("is_pro")),"limit":lim})
+        if not user.get("is_pro") and db.spend_credit(email):
+            used_credit = True
+        else:
+            msg = f"Daily limit reached ({lim}/day). Resets midnight UTC." if user.get("is_pro") else f"Free daily limit reached ({lim}/day). Buy scan credits or upgrade to Pro for 30/day."
+            return JSONResponse(status_code=402, content={"error":"limit_reached","message":msg,"is_pro":bool(user.get("is_pro")),"limit":lim,"credits":user.get("credits",0)})
     cfg = db.get_config()
     tier = "pro" if user.get("is_pro") else "free"
     rp = cfg.get(f"roast_provider_{tier}","groq")
@@ -186,7 +190,7 @@ async def analyze(body: AnalyzeReq, request: Request):
     db.log_scan(email, roast.get("score", 5))
     user = db.get_or_create(email)
     user = db.reset_daily(email) or user
-    return {"score":roast.get("score",5),"roast":roast.get("roast",""),"risk":roast.get("risk",""),"rewrite":rewrite_raw.strip(),"scans_used":user.get("scans_used",0),"daily_scans":user.get("daily_scans",0),"scans_remaining":db.remaining(user),"daily_limit":db.limit_for(user),"is_pro":bool(user.get("is_pro"))}
+    return {"score":roast.get("score",5),"roast":roast.get("roast",""),"risk":roast.get("risk",""),"rewrite":rewrite_raw.strip(),"scans_used":user.get("scans_used",0),"daily_scans":user.get("daily_scans",0),"scans_remaining":db.remaining(user),"daily_limit":db.limit_for(user),"is_pro":bool(user.get("is_pro")),"used_credit":used_credit,"credits":user.get("credits",0)}
 
 # -- Status --
 @app.get("/api/check-status")
@@ -268,7 +272,36 @@ async def rotate_code(body: RotateCodeReq, request: Request):
     new_code = db.rotate_invite_code(body.team_id)
     return {"success": True, "invite_code": new_code}
 
-@app.post("/api/razorpay-webhook")
+class CreditCheckoutReq(BaseModel):
+    pack: str  # "small" | "medium" | "large"
+    email: str = ""
+
+@app.post("/api/credits/checkout")
+async def credits_checkout(body: CreditCheckoutReq, request: Request):
+    session_email = _get_current_user(request)
+    email = session_email if session_email else body.email.strip().lower()
+    if not email:
+        raise HTTPException(400, "Email required")
+    if body.pack not in db.CREDIT_PACKS:
+        raise HTTPException(400, "Invalid pack")
+    credits, amount = db.CREDIT_PACKS[body.pack]
+    try:
+        c = _rz()
+        link = c.payment_link.create({
+            "amount": amount * 100,  # paise
+            "currency": "INR",
+            "description": f"{credits} UnHinged scan credits",
+            "notes": {"type": "credits", "email": email, "pack": body.pack},
+            "callback_url": f"{APP_URL}/?credits=success",
+            "callback_method": "get",
+        })
+        db.create_credit_order(email, link["id"], body.pack)
+        return {"payment_link": link["short_url"]}
+    except Exception as e:
+        log.error(f"Credit checkout error: {e}")
+        raise HTTPException(500, "Checkout failed")
+
+
 async def rz_webhook(request: Request):
     body = await request.body()
     sig = request.headers.get("X-Razorpay-Signature","")
@@ -290,6 +323,18 @@ async def rz_webhook(request: Request):
     except: pass
     try: pay_id = payload["payload"]["payment"]["entity"]["id"]
     except: pass
+
+    # -- One-time credit pack purchases (Payment Links, not subscriptions) --
+    try:
+        pl_entity = payload["payload"]["payment_link"]["entity"]
+    except:
+        pl_entity = None
+    if pl_entity and pl_entity.get("notes", {}).get("type") == "credits":
+        if event == "payment_link.paid":
+            applied = db.apply_credit_purchase(pl_entity["id"])
+            if applied:
+                log.info(f"Credits applied: {applied['credits']} to {applied['email']} (link {pl_entity['id']})")
+        return {"status": "ok"}
 
     # -- Team subscriptions (per-seat) --
     if notes.get("type") == "team":

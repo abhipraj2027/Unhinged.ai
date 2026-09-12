@@ -41,7 +41,7 @@ def init_db():
             config_key TEXT UNIQUE NOT NULL,
             config_value TEXT NOT NULL,
             updated_at REAL DEFAULT (strftime('%s','now')))""")
-        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''")]:
+        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("credits","INTEGER DEFAULT 0")]:
             try: db.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
             except: pass
         # Free tier: cheap/fast Groq model (near-zero cost)
@@ -80,6 +80,12 @@ def init_db():
         db.execute("""CREATE TABLE IF NOT EXISTS pending_team_members (
             id INTEGER PRIMARY KEY AUTOINCREMENT, razorpay_sub_id TEXT NOT NULL, email TEXT NOT NULL,
             created_at REAL DEFAULT (strftime('%s','now')))""")
+        # One-time credit pack purchases. order_id is unique so a webhook retry
+        # can never double-credit the same payment.
+        db.execute("""CREATE TABLE IF NOT EXISTS credit_purchases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, razorpay_order_id TEXT UNIQUE NOT NULL,
+            email TEXT NOT NULL, credits INTEGER NOT NULL, amount_inr INTEGER NOT NULL,
+            status TEXT DEFAULT 'created', created_at REAL DEFAULT (strftime('%s','now')))""")
         # Add columns if upgrading
         for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("password_hash","TEXT")]:
             try: db.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
@@ -434,6 +440,41 @@ def apply_pending_team_members(team_id, sub_id):
             current += 1
         db.execute("DELETE FROM pending_team_members WHERE razorpay_sub_id=?", (sub_id,))
     return added
+
+CREDIT_PACKS = {"small": (10, 10), "medium": (50, 50), "large": (100, 100)}  # pack_id: (credits, price_inr)
+
+def create_credit_order(email, order_id, pack_id):
+    credits, amount = CREDIT_PACKS[pack_id]
+    with get_db() as db:
+        db.execute("INSERT INTO credit_purchases(razorpay_order_id,email,credits,amount_inr) VALUES(?,?,?,?)",
+                   (order_id, email.strip().lower(), credits, amount))
+
+def apply_credit_purchase(order_id):
+    """Idempotent: only ever credits an order once, even if the webhook fires
+    more than once for the same payment (Razorpay can retry webhooks)."""
+    with get_db() as db:
+        row = db.execute("SELECT * FROM credit_purchases WHERE razorpay_order_id=?", (order_id,)).fetchone()
+        if not row:
+            return None
+        if row["status"] == "completed":
+            return dict(row)  # already applied — no-op, prevents double-credit
+        email, credits = row["email"], row["credits"]
+        existing = db.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
+        if not existing:
+            db.execute("INSERT INTO users(email) VALUES(?)", (email,))
+        db.execute("UPDATE users SET credits=credits+? WHERE email=?", (credits, email))
+        db.execute("UPDATE credit_purchases SET status='completed' WHERE razorpay_order_id=?", (order_id,))
+        return dict(row)
+
+def spend_credit(email):
+    """Deduct exactly one credit. Returns True if a credit was available and spent."""
+    email = email.strip().lower()
+    with get_db() as db:
+        row = db.execute("SELECT credits FROM users WHERE email=?", (email,)).fetchone()
+        if not row or (row["credits"] or 0) <= 0:
+            return False
+        db.execute("UPDATE users SET credits=credits-1 WHERE email=?", (email,))
+        return True
 
 def log_scan(email, score):
     email = email.strip().lower()

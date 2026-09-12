@@ -103,6 +103,8 @@ textarea:focus{border-color:#FF5C00;box-shadow:0 0 0 3px rgba(255,92,0,.1)}
 /* SHARE */
 .share-row{margin-top:12px;display:flex;gap:8px;justify-content:center;display:none}
 .share-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#A1A1AA;padding:7px 12px;border-radius:8px;font-size:11px;cursor:pointer;font-family:ui-monospace,monospace}
+.credit-btn{background:rgba(255,92,0,.1);border:1px solid rgba(255,92,0,.3);color:#FF5C00;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:ui-monospace,monospace}
+.credit-btn:hover{background:rgba(255,92,0,.2)}
 .share-btn:hover{border-color:#FF5C00;color:#FF5C00}
 
 /* HOW IT WORKS */
@@ -410,7 +412,12 @@ goBtn.addEventListener("click", async () => {
     loadBox.style.display = "none";
     const d = await r.json();
     if (r.status === 402) {
-      errBox.innerHTML = '⚡ Daily limit reached. <a href="/login" style="color:#FF5C00;font-weight:700">Login</a> or <a href="#pricing" style="color:#FF5C00;font-weight:700">Upgrade to Pro →</a>';
+      errBox.innerHTML = '⚡ Daily limit reached. <a href="/login" style="color:#FF5C00;font-weight:700">Login</a>, buy more scans below, or <a href="#pricing" style="color:#FF5C00;font-weight:700">upgrade to Pro →</a>' +
+        '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button onclick="buyCredits(\'small\')" class="credit-btn">10 scans — ₹10</button>' +
+        '<button onclick="buyCredits(\'medium\')" class="credit-btn">50 scans — ₹50</button>' +
+        '<button onclick="buyCredits(\'large\')" class="credit-btn">100 scans — ₹100</button>' +
+        '</div>';
       errBox.style.display = "block";
       return;
     }
@@ -492,6 +499,25 @@ function handleUpgrade() {
     document.getElementById("upgradeEmail").value = "";
     document.getElementById("upgradeEmail").focus();
   }
+}
+
+async function buyCredits(pack) {
+  const email = userEmail || document.getElementById("emailIn")?.value?.trim();
+  if (!email) {
+    document.getElementById("emailCapture").style.display = "block";
+    document.getElementById("emailCapture").scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+  try {
+    const r = await fetch(API + "/api/credits/checkout", {
+      method: "POST", credentials: "include",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({pack: pack, email: email})
+    });
+    const d = await r.json();
+    if (!r.ok) { alert(d.detail || "Checkout failed"); return; }
+    if (d.payment_link) window.open(d.payment_link, "_blank");
+  } catch(e) { alert("Network error. Try again."); }
 }
 
 function closeEmailModal() {
