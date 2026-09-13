@@ -441,7 +441,7 @@ def apply_pending_team_members(team_id, sub_id):
         db.execute("DELETE FROM pending_team_members WHERE razorpay_sub_id=?", (sub_id,))
     return added
 
-CREDIT_PACKS = {"small": (10, 10), "medium": (50, 50), "large": (100, 100)}  # pack_id: (credits, price_inr)
+CREDIT_PACKS = {"small": (30, 49), "medium": (100, 149), "large": (250, 299)}  # pack_id: (credits, price_inr)
 
 def create_credit_order(email, order_id, pack_id):
     credits, amount = CREDIT_PACKS[pack_id]

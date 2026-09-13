@@ -69,6 +69,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.action === "buyCredits") {
+    apiFetch("/api/credits/checkout", {
+      method: "POST",
+      body: JSON.stringify({ pack: msg.pack, email: msg.email }),
+    })
+      .then(({ data }) => sendResponse(data))
+      .catch((e) => sendResponse({ error: true, message: e.message }));
+    return true;
+  }
+
   // ── Auth: login / signup / join-team all return {token, ...profile};
   //    store the token so subsequent requests are properly authenticated
   //    instead of just trusting a typed email. ──

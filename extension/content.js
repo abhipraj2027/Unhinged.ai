@@ -621,20 +621,30 @@ footer a:hover{color:#FF5C00}
     shadow.getElementById("errMsg").textContent = m;
   }
 
-  function renderPaywall(isPro = false) {
+  function renderPaywall(isPro = false, credits = 0) {
     clearLoading();
     const title = isPro ? "Daily limit reached" : "Free daily limit reached";
     const desc = isPro
       ? "You've used all <b>30</b> Pro scans today.<br>Resets at <b>midnight UTC</b>."
-      : "You've used all <b>5</b> free scans today.<br>Upgrade to <b>UnHinged Pro</b> for <b>30 scans/day</b>.<br><span style=\"color:#71717A\">₹199/month · Cancel anytime</span>";
+      : "You've used all <b>5</b> free scans today.<br>Buy more scans below, or upgrade to <b>UnHinged Pro</b> for <b>30 scans/day</b>.<br><span style=\"color:#71717A\">₹299/month · Cancel anytime</span>";
     let html = '<div class="cta-card">';
     html += '<div class="cta-title">⚡ ' + title + '</div>';
     html += '<div class="cta-desc">' + desc + '</div>';
-    if (!isPro) html += '<button class="cta-btn" id="doUp">Upgrade to Pro — ₹199/month</button>';
+    if (!isPro) {
+      html += '<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap">';
+      html += '<button class="cta-btn ghost" id="buySmall" style="flex:1;min-width:80px">30 — ₹49</button>';
+      html += '<button class="cta-btn ghost" id="buyMedium" style="flex:1;min-width:80px">100 — ₹149</button>';
+      html += '<button class="cta-btn ghost" id="buyLarge" style="flex:1;min-width:80px">250 — ₹299</button>';
+      html += '</div>';
+    }
+    if (!isPro) html += '<button class="cta-btn" id="doUp">Upgrade to Pro — ₹299/month</button>';
     if (!isPro) html += '<button class="cta-btn ghost" id="chkPro">I just upgraded — restore access</button>';
     html += '</div>';
     results.innerHTML = html;
     shadow.getElementById("doUp")?.addEventListener("click", doUpgrade);
+    shadow.getElementById("buySmall")?.addEventListener("click", () => doBuyCredits("small"));
+    shadow.getElementById("buyMedium")?.addEventListener("click", () => doBuyCredits("medium"));
+    shadow.getElementById("buyLarge")?.addEventListener("click", () => doBuyCredits("large"));
     shadow.getElementById("chkPro")?.addEventListener("click", async () => {
       const s = await send({ action: "checkStatus", email: currentEmail() });
       if (s) status = s;
@@ -642,6 +652,17 @@ footer a:hover{color:#FF5C00}
       if (status.is_pro) { results.innerHTML = ""; showToast("Welcome to Pro 🔥"); }
       else showToast("Still on free plan", true);
     });
+  }
+
+  async function doBuyCredits(pack) {
+    showToast("Opening payment...");
+    const r = await send({ action: "buyCredits", pack, email: currentEmail() });
+    if (r?.payment_link) {
+      window.open(r.payment_link, "_blank", "noopener");
+      showToast("Complete payment in the new tab — credits apply automatically");
+    } else {
+      showToast(r?.message || "Payment error", true);
+    }
   }
 
   async function doUpgrade() {
