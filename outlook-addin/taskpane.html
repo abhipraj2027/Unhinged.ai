@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UnHinged</title>
+<script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<link rel="stylesheet" href="taskpane.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <span class="flame">🔥</span>
+      <span class="brand">UnHinged</span>
+    </header>
+
+    <!-- Logged out -->
+    <div id="loginView" class="view">
+      <p class="hint">Log in to check your email's tone before sending.</p>
+      <input type="email" id="loginEmail" placeholder="you@company.com" />
+      <input type="password" id="loginPw" placeholder="Password" />
+      <button class="btn" id="doLoginBtn">Log In</button>
+      <div class="switch">No account? <a href="#" id="toSignup">Sign up</a></div>
+    </div>
+
+    <div id="signupView" class="view" style="display:none">
+      <p class="hint">Create your account — 5 free scans/day.</p>
+      <input type="email" id="signupEmail" placeholder="you@company.com" />
+      <input type="password" id="signupPw" placeholder="Min 6 characters" />
+      <button class="btn" id="doSignupBtn">Sign Up</button>
+      <div class="switch">Have an account? <a href="#" id="toLogin">Log in</a></div>
+    </div>
+
+    <!-- Logged in — main tool -->
+    <div id="mainView" class="view" style="display:none">
+      <div class="statusbar">
+        <span id="statusEmail"></span>
+        <a href="#" id="logoutLink">Log out</a>
+      </div>
+      <button class="btn primary" id="analyzeBtn">🔥 Check This Email</button>
+      <div id="resultCard" style="display:none"></div>
+    </div>
+
+    <div id="toast" class="toast" style="display:none"></div>
+  </div>
+  <script src="taskpane.js"></script>
+</body>
+</html>

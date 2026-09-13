@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from itsdangerous import URLSafeSerializer
 import database as db
@@ -14,6 +15,7 @@ log = logging.getLogger("unhinged")
 
 app = FastAPI(title="UnHinged API", version="2.5.0", docs_url=None, redoc_url=None, openapi_url=None)
 templates = Jinja2Templates(directory="templates")
+app.mount("/outlook-addin", StaticFiles(directory="outlook-addin"), name="outlook-addin")
 
 APP_URL = os.getenv("APP_URL","http://localhost:8000")
 
