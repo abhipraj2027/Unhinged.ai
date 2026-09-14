@@ -41,7 +41,7 @@ def init_db():
             config_key TEXT UNIQUE NOT NULL,
             config_value TEXT NOT NULL,
             updated_at REAL DEFAULT (strftime('%s','now')))""")
-        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("credits","INTEGER DEFAULT 0")]:
+        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("credits","INTEGER DEFAULT 0"),("in_trial","INTEGER DEFAULT 0"),("trial_reminder_sent","INTEGER DEFAULT 0")]:
             try: db.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
             except: pass
         # Free tier: cheap/fast Groq model (near-zero cost)
@@ -141,15 +141,35 @@ def inc_scan(email):
             daily_reset=?, scans_used=scans_used+1, last_scan_at=strftime('%s','now')
             WHERE email=?""",(today,today,email))
 
-def set_pro(email, sub_id=None, pay_id=None):
+def set_pro(email, sub_id=None, pay_id=None, days=30, in_trial=False):
     email = email.strip().lower()
-    exp = time.time() + 30*86400
+    exp = time.time() + days*86400
+    trial_flag = 1 if in_trial else 0
     with get_db() as db:
         u = db.execute("SELECT id FROM users WHERE email=?",(email,)).fetchone()
         if u:
-            db.execute("UPDATE users SET is_pro=1,expires_at=?,razorpay_sub_id=COALESCE(?,razorpay_sub_id),razorpay_pay_id=COALESCE(?,razorpay_pay_id) WHERE email=?",(exp,sub_id,pay_id,email))
+            # Reset trial_reminder_sent whenever a fresh trial starts, and
+            # whenever a trial converts to paid (in case of a future re-trial).
+            db.execute("UPDATE users SET is_pro=1,expires_at=?,in_trial=?,trial_reminder_sent=0,razorpay_sub_id=COALESCE(?,razorpay_sub_id),razorpay_pay_id=COALESCE(?,razorpay_pay_id) WHERE email=?",(exp,trial_flag,sub_id,pay_id,email))
         else:
-            db.execute("INSERT INTO users(email,is_pro,expires_at,razorpay_sub_id,razorpay_pay_id) VALUES(?,1,?,?,?)",(email,exp,sub_id,pay_id))
+            db.execute("INSERT INTO users(email,is_pro,expires_at,in_trial,razorpay_sub_id,razorpay_pay_id) VALUES(?,1,?,?,?,?)",(email,exp,trial_flag,sub_id,pay_id))
+
+def get_users_needing_trial_reminder():
+    """Trial users whose access expires in roughly 1-2 days and haven't
+    already been sent a reminder for this trial."""
+    now = time.time()
+    window_start = now + 1*86400
+    window_end = now + 2*86400
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT email, expires_at FROM users WHERE is_pro=1 AND in_trial=1 AND trial_reminder_sent=0 AND expires_at BETWEEN ? AND ?",
+            (window_start, window_end)
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+def mark_trial_reminder_sent(email):
+    with get_db() as db:
+        db.execute("UPDATE users SET trial_reminder_sent=1 WHERE email=?", (email.strip().lower(),))
 
 def unset_pro(email):
     with get_db() as db:

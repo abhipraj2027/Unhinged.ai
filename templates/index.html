@@ -218,8 +218,9 @@ footer a:hover{color:#FF5C00}
     <div class="pcard pro">
       <div class="tier">Pro</div>
       <div class="price">₹299<small>/month</small></div>
+      <div style="font-size:11px;color:#22C55E;font-weight:700;margin-bottom:8px">✓ 7-day free trial</div>
       <ul><li>30 scans/day</li><li>Sharper AI roasts (premium model)</li><li>Priority analysis</li><li>Works on web + Gmail</li><li>Cancel anytime</li></ul>
-      <button onclick="handleUpgrade()" style="display:block;width:100%;margin-top:14px;padding:12px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.04em">Get Pro →</button>
+      <button onclick="handleUpgrade()" style="display:block;width:100%;margin-top:14px;padding:12px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.04em">Start Free Trial →</button>
     </div>
     <div class="pcard team">
       <div class="tier" style="color:#22C55E">Teams</div>
@@ -243,11 +244,11 @@ footer a:hover{color:#FF5C00}
 <div id="emailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px">
   <div style="background:#141414;border:1px solid rgba(255,92,0,.3);border-radius:16px;padding:28px 24px;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.8)">
     <div style="font-size:28px;margin-bottom:8px">⚡</div>
-    <h3 style="font-size:18px;font-weight:900;margin-bottom:6px">Upgrade to Pro</h3>
-    <p style="font-size:13px;color:#A1A1AA;margin-bottom:16px;line-height:1.5">Enter your email to continue to payment.<br>This email will be your Pro account.</p>
+    <h3 style="font-size:18px;font-weight:900;margin-bottom:6px">Start Your Free Trial</h3>
+    <p style="font-size:13px;color:#A1A1AA;margin-bottom:16px;line-height:1.5">Enter your email to continue to payment setup.<br>This email will be your Pro account.</p>
     <input type="email" id="upgradeEmail" placeholder="you@company.com" style="width:100%;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px;font-size:14px;outline:none;font-family:ui-monospace,monospace;margin-bottom:12px;text-align:center">
-    <button id="upgradeConfirmBtn" onclick="confirmUpgrade()" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.04em">Continue to Payment →</button>
-    <div style="margin-top:10px;font-size:11px;color:#52525B">₹299/month · Cancel anytime · Secured by Razorpay</div>
+    <button id="upgradeConfirmBtn" onclick="confirmUpgrade()" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.04em">Start 7-Day Free Trial →</button>
+    <div style="margin-top:10px;font-size:11px;color:#52525B">Free for 7 days, then ₹299/month · Cancel anytime before trial ends to avoid charges · Secured by Razorpay</div>
     <div onclick="closeEmailModal()" style="margin-top:12px;font-size:12px;color:#71717A;cursor:pointer">Cancel</div>
   </div>
 </div>

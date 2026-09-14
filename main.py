@@ -34,6 +34,7 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/outlook-addin", StaticFiles(directory="outlook-addin"), name="outlook-addin")
 
 APP_URL = os.getenv("APP_URL","http://localhost:8000")
+TRIAL_DAYS = 7
 
 # -- IP-based rate limit (defense-in-depth on top of per-email daily quota,
 #    since the email on /api/analyze is self-reported and unverified) --
@@ -67,11 +68,13 @@ app.add_middleware(CORSMiddleware,
     allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 @app.on_event("startup")
-def startup():
+async def startup():
     db.init_db()
     log.info("DB initialized")
     for k in ["GROQ_API_KEY","ANTHROPIC_API_KEY","OPENAI_API_KEY","GOOGLE_API_KEY","RAZORPAY_KEY_ID"]:
         log.info(f"  {k}: {'✓' if os.getenv(k) else '✗'}")
+    asyncio.create_task(_trial_reminder_loop())
+    log.info("Trial reminder background task started")
 
 # -- Models --
 class AnalyzeReq(BaseModel):
@@ -243,10 +246,16 @@ async def create_sub(body: SubReq):
     if not plan: raise HTTPException(500,"Plan not configured")
     try:
         c = _rz()
-        sub = c.subscription.create({"plan_id":plan,"total_count":12,"quantity":1,"notes":{"email":email,"product":"unhinged_pro"}})
+        # start_at delays the first real charge by TRIAL_DAYS — Razorpay still
+        # authenticates a payment method immediately (subscription.authenticated
+        # webhook fires right away), but doesn't actually charge the card until
+        # start_at passes. We grant Pro access on authentication (see webhook
+        # handler), not on the first charge, so the trial is genuinely free.
+        start_at = int(time.time()) + TRIAL_DAYS*86400
+        sub = c.subscription.create({"plan_id":plan,"total_count":12,"quantity":1,"start_at":start_at,"notes":{"email":email,"product":"unhinged_pro","trial":"true"}})
         with db.get_db() as conn:
             conn.execute("UPDATE users SET razorpay_sub_id=? WHERE email=?",(sub["id"],email))
-        return {"subscription_id":sub["id"],"payment_link":sub.get("short_url","")}
+        return {"subscription_id":sub["id"],"payment_link":sub.get("short_url",""),"trial_days":TRIAL_DAYS}
     except Exception as e:
         log.error(f"Razorpay error: {e}")
         raise HTTPException(500,f"Payment error: {e}")
@@ -384,10 +393,20 @@ async def rz_webhook(request: Request):
         try: email = payload["payload"]["payment"]["entity"].get("email")
         except: pass
     if not email: return {"status":"ok"}
-    if event in ("subscription.activated","subscription.charged","payment.captured"):
-        db.set_pro(email, sub_id, pay_id)
-        log.info(f"Pro ON: {email}")
-    elif event in ("subscription.cancelled","subscription.paused","subscription.completed"):
+    is_trial = notes.get("trial") == "true"
+    if event == "subscription.authenticated" and is_trial:
+        # Payment method authenticated, first real charge delayed by start_at —
+        # this IS the trial starting. Grant short-lived access for the trial
+        # window only, so cancelling before the real charge correctly ends
+        # access at day 7, not day 30.
+        db.set_pro(email, sub_id, pay_id, days=TRIAL_DAYS, in_trial=True)
+        log.info(f"Trial started: {email} ({TRIAL_DAYS} days)")
+    elif event in ("subscription.activated","subscription.charged","payment.captured"):
+        # Real payment succeeded — either the trial converted to paid, or this
+        # is a non-trial subscription. Extend to a full paid month.
+        db.set_pro(email, sub_id, pay_id, days=30, in_trial=False)
+        log.info(f"Pro ON (paid): {email}")
+    elif event in ("subscription.cancelled","subscription.paused","subscription.completed","subscription.halted"):
         db.unset_pro(email)
         log.info(f"Pro OFF: {email}")
     return {"status":"ok"}
@@ -573,6 +592,45 @@ class ForgotReq(BaseModel):
 class ResetReq(BaseModel):
     token: str
     new_password: str
+
+async def _send_trial_reminder_email(to_email):
+    """Sent ~1-2 days before a free trial converts to a paid ₹299/month
+    subscription. Razorpay's own checkout sends a baseline compliance
+    notification per RBI recurring-payment rules, but this branded reminder
+    is clearer and gives us a natural retention touchpoint."""
+    resend_key = os.getenv("RESEND_API_KEY")
+    if not resend_key:
+        return False
+    account_url = f"{APP_URL}/account"
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post("https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                json={
+                    "from": os.getenv("FROM_EMAIL", "UnHinged <noreply@unhinged.email>"),
+                    "to": [to_email],
+                    "subject": "Your UnHinged Pro trial ends soon",
+                    "html": f'<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:20px"><h2 style="color:#FF5C00">🔥 UnHinged</h2><p>Your 7-day free trial of UnHinged Pro is ending soon. Unless you cancel before then, your card will be charged <strong>₹299</strong> and you\'ll continue with Pro — 30 scans/day, sharper AI roasts, priority analysis.</p><p><a href="{account_url}" style="display:inline-block;padding:12px 24px;background:#FF5C00;color:#000;text-decoration:none;border-radius:8px;font-weight:bold">Manage or cancel your subscription</a></p><p style="color:#999;font-size:12px">No action needed if you want to continue — this is just a heads up before your card is charged.</p></div>'
+                })
+            return r.status_code == 200
+    except Exception as e:
+        log.error(f"Trial reminder email error: {e}")
+        return False
+
+async def _trial_reminder_loop():
+    """Background task: checks every 6 hours for trial users entering their
+    final 1-2 days and sends a heads-up before the card is actually charged."""
+    while True:
+        try:
+            due = db.get_users_needing_trial_reminder()
+            for u in due:
+                sent = await _send_trial_reminder_email(u["email"])
+                if sent:
+                    db.mark_trial_reminder_sent(u["email"])
+                    log.info(f"Trial reminder sent: {u['email']}")
+        except Exception as e:
+            log.error(f"Trial reminder loop error: {e}")
+        await asyncio.sleep(6*3600)
 
 async def _send_team_member_added_email(to_email, team_name):
     """Notify someone the founder added directly that they now have Pro access."""
