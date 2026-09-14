@@ -13,6 +13,17 @@ from llm import call_llm, parse_roast_json
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("unhinged")
 
+_SUBJECT_LINE_RE = re.compile(r"^\s*\**subject\**\s*:\s*.*(?:\n+|$)", re.IGNORECASE)
+
+def clean_rewrite(text: str) -> str:
+    """Safety net: the LLM is instructed not to include a 'Subject:' line in the
+    rewrite, but instruction-following isn't 100% reliable — if one slips through
+    anyway, strip it here so it never ends up dumped into the email BODY on the
+    client side (where it would otherwise show up as a stray first paragraph)."""
+    if not text:
+        return text
+    return _SUBJECT_LINE_RE.sub("", text, count=1).strip()
+
 app = FastAPI(title="UnHinged API", version="2.5.0", docs_url=None, redoc_url=None, openapi_url=None)
 templates = Jinja2Templates(directory="templates")
 app.mount("/outlook-addin", StaticFiles(directory="outlook-addin"), name="outlook-addin")
@@ -192,7 +203,7 @@ async def analyze(body: AnalyzeReq, request: Request):
     db.log_scan(email, roast.get("score", 5))
     user = db.get_or_create(email)
     user = db.reset_daily(email) or user
-    return {"score":roast.get("score",5),"roast":roast.get("roast",""),"risk":roast.get("risk",""),"rewrite":rewrite_raw.strip(),"scans_used":user.get("scans_used",0),"daily_scans":user.get("daily_scans",0),"scans_remaining":db.remaining(user),"daily_limit":db.limit_for(user),"is_pro":bool(user.get("is_pro")),"used_credit":used_credit,"credits":user.get("credits",0)}
+    return {"score":roast.get("score",5),"roast":roast.get("roast",""),"risk":roast.get("risk",""),"rewrite":clean_rewrite(rewrite_raw),"scans_used":user.get("scans_used",0),"daily_scans":user.get("daily_scans",0),"scans_remaining":db.remaining(user),"daily_limit":db.limit_for(user),"is_pro":bool(user.get("is_pro")),"used_credit":used_credit,"credits":user.get("credits",0)}
 
 # -- Status --
 @app.get("/api/check-status")
@@ -822,7 +833,7 @@ async def admin_test(body: TestReq, request: Request):
     except Exception as e:
         return {"error":str(e)}
     roast = parse_roast_json(roast_raw)
-    return {**roast,"rewrite":rewrite_raw.strip(),"time_ms":int((time.time()-t0)*1000),"tier":tier,"roast_model":cfg.get(f"roast_model_{tier}"),"rewrite_model":cfg.get(f"rewrite_model_{tier}")}
+    return {**roast,"rewrite":clean_rewrite(rewrite_raw),"time_ms":int((time.time()-t0)*1000),"tier":tier,"roast_model":cfg.get(f"roast_model_{tier}"),"rewrite_model":cfg.get(f"rewrite_model_{tier}")}
 
 @app.get("/admin/stats")
 async def admin_stats(request: Request):
