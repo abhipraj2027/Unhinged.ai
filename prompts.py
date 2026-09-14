@@ -48,4 +48,10 @@ WRITE LIKE A HUMAN:
 - End with one clear ask or next step.
 - Sign off naturally — "Thanks", "Cheers", or whatever fits.
 
-Return ONLY the rewritten email BODY — the greeting and message text a person would type into the email body field. Do NOT include a "Subject:" line, a subject heading, or anything that belongs in the subject field — the subject line is handled separately and must never appear as part of your output. No explanations, no prefix."""
+Return your response in EXACTLY this format, nothing else:
+
+Subject: <a short, clear, professional subject line — a few words, not a full sentence>
+
+<the rewritten email body only — greeting, message, sign-off>
+
+Do not add explanations, headers, or anything outside this exact structure."""

@@ -388,6 +388,19 @@ footer a:hover{color:#FF5C00}
     return null;
   }
 
+  function findSubjectInput(bodyEl) {
+    // Walk up from the compose body to find the enclosing compose window,
+    // then look for its subject field within that same subtree — handles
+    // multiple compose windows being open at once correctly.
+    let node = bodyEl;
+    for (let i = 0; i < 8 && node; i++) {
+      const subj = node.querySelector && node.querySelector('input[name="subjectbox"]');
+      if (subj) return subj;
+      node = node.parentElement;
+    }
+    return document.querySelector('input[name="subjectbox"]');
+  }
+
   function autoGrab() {
     if (msg.value.trim()) return;
     const el = findCompose();
@@ -611,6 +624,13 @@ footer a:hover{color:#FF5C00}
       if (!el) return showToast("No open compose window", true);
       el.innerHTML = esc(d.rewrite || "").replace(/\n/g, "<br>");
       el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+      if (d.rewrite_subject) {
+        const subjEl = findSubjectInput(el);
+        if (subjEl) {
+          subjEl.value = d.rewrite_subject;
+          subjEl.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      }
       showToast("Draft replaced ✓");
     });
   }

@@ -2,6 +2,7 @@ const API = "https://unhinged.email";
 let authToken = null;
 let currentUserEmail = "";
 let lastRewrite = "";
+let lastRewriteSubject = "";
 
 Office.onReady(() => {
   authToken = localStorage.getItem("unhinged_token");
@@ -108,6 +109,15 @@ function setComposeBodyText(text) {
   });
 }
 
+function setComposeSubject(subject) {
+  return new Promise((resolve, reject) => {
+    Office.context.mailbox.item.subject.setAsync(subject, (result) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) resolve();
+      else reject(result.error);
+    });
+  });
+}
+
 async function doAnalyze() {
   const btn = document.getElementById("analyzeBtn");
   const card = document.getElementById("resultCard");
@@ -143,6 +153,7 @@ async function doAnalyze() {
 
 function renderResult(d) {
   lastRewrite = d.rewrite || "";
+  lastRewriteSubject = d.rewrite_subject || "";
   const card = document.getElementById("resultCard");
   card.innerHTML = `
     <div class="score-row">
@@ -159,6 +170,10 @@ function renderResult(d) {
   document.getElementById("replaceDraftBtn").onclick = async () => {
     try {
       await setComposeBodyText(lastRewrite);
+      if (lastRewriteSubject) {
+        try { await setComposeSubject(lastRewriteSubject); }
+        catch (e) { /* subject set can fail on read-only/reply threads — body replace still succeeded, don't block on it */ }
+      }
       showToast("Draft replaced ✓");
     } catch (e) {
       showToast("Couldn't replace draft", true);
