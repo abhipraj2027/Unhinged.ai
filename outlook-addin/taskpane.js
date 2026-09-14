@@ -212,34 +212,45 @@ function openPaymentDialog(url) {
   // embedded webview Outlook desktop uses for task panes.
   Office.context.ui.displayDialogAsync(url, { height: 70, width: 50 }, (result) => {
     if (result.status !== Office.AsyncResultStatus.Succeeded) {
-      showToast("Couldn't open payment page", true);
+      console.error("displayDialogAsync failed:", result.error);
+      showToast(`Couldn't open payment page (${result.error?.message || "unknown error"})`, true);
     }
   });
 }
 
 async function buyCredits(pack) {
-  const { ok, data } = await apiFetch("/api/credits/checkout", {
-    method: "POST",
-    body: JSON.stringify({ pack, email: currentUserEmail }),
-  });
-  if (ok && data.payment_link) {
-    openPaymentDialog(data.payment_link);
-    showToast("Complete payment in the window that opened — credits apply automatically");
-  } else {
-    showToast(data.detail || "Checkout failed", true);
+  try {
+    const { ok, data } = await apiFetch("/api/credits/checkout", {
+      method: "POST",
+      body: JSON.stringify({ pack, email: currentUserEmail }),
+    });
+    if (ok && data.payment_link) {
+      openPaymentDialog(data.payment_link);
+      showToast("Complete payment in the window that opened — credits apply automatically");
+    } else {
+      showToast(data.detail || "Checkout failed", true);
+    }
+  } catch (e) {
+    console.error("buyCredits error:", e);
+    showToast("Network error — see console for details", true);
   }
 }
 
 async function doUpgrade() {
-  const { ok, data } = await apiFetch("/api/create-subscription", {
-    method: "POST",
-    body: JSON.stringify({ email: currentUserEmail }),
-  });
-  if (ok && data.payment_link) {
-    openPaymentDialog(data.payment_link);
-    showToast("Complete payment in the window that opened");
-  } else {
-    showToast(data.detail || "Checkout failed", true);
+  try {
+    const { ok, data } = await apiFetch("/api/create-subscription", {
+      method: "POST",
+      body: JSON.stringify({ email: currentUserEmail }),
+    });
+    if (ok && data.payment_link) {
+      openPaymentDialog(data.payment_link);
+      showToast("Complete payment in the window that opened");
+    } else {
+      showToast(data.detail || "Checkout failed", true);
+    }
+  } catch (e) {
+    console.error("doUpgrade error:", e);
+    showToast("Network error — see console for details", true);
   }
 }
 
