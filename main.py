@@ -238,7 +238,10 @@ def _rz():
     return razorpay.Client(auth=(k,s))
 
 @app.post("/api/create-subscription")
-async def create_sub(body: SubReq):
+async def create_sub(body: SubReq, request: Request):
+    ip = _get_client_ip(request)
+    if _ip_rate_limited(ip):
+        raise HTTPException(429, "Too many requests from this network. Try again later.")
     email = body.email.strip().lower()
     user = db.get_or_create(email)
     if user.get("is_pro"): return {"already_pro":True}
@@ -306,6 +309,9 @@ class CreditCheckoutReq(BaseModel):
 
 @app.post("/api/credits/checkout")
 async def credits_checkout(body: CreditCheckoutReq, request: Request):
+    ip = _get_client_ip(request)
+    if _ip_rate_limited(ip):
+        raise HTTPException(429, "Too many requests from this network. Try again later.")
     session_email = _get_current_user(request)
     email = session_email if session_email else body.email.strip().lower()
     if not email:
@@ -866,6 +872,9 @@ async def admin_page(request: Request):
 
 @app.post("/admin/login")
 async def admin_login(request: Request):
+    ip = _get_client_ip(request)
+    if _ip_rate_limited(ip):
+        raise HTTPException(429, "Too many attempts from this network. Try again later.")
     body = await request.json()
     if body.get("password") != ADMIN_PW: raise HTTPException(401,"Wrong password")
     resp = JSONResponse({"success":True})
