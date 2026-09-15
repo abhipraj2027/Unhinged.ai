@@ -247,18 +247,25 @@ async def create_sub(body: SubReq, request: Request):
     if user.get("is_pro"): return {"already_pro":True}
     plan = os.getenv("RAZORPAY_PLAN_ID")
     if not plan: raise HTTPException(500,"Plan not configured")
+    already_trialed = db.has_used_trial(email)
     try:
         c = _rz()
-        # start_at delays the first real charge by TRIAL_DAYS — Razorpay still
-        # authenticates a payment method immediately (subscription.authenticated
-        # webhook fires right away), but doesn't actually charge the card until
-        # start_at passes. We grant Pro access on authentication (see webhook
-        # handler), not on the first charge, so the trial is genuinely free.
-        start_at = int(time.time()) + TRIAL_DAYS*86400
-        sub = c.subscription.create({"plan_id":plan,"total_count":12,"quantity":1,"start_at":start_at,"notes":{"email":email,"product":"unhinged_pro","trial":"true"}})
+        if already_trialed:
+            # This email has already had a free trial before — skip start_at
+            # entirely so billing begins immediately, no repeat trial. Prevents
+            # the cancel-then-resubscribe loop for indefinite free access.
+            sub = c.subscription.create({"plan_id":plan,"total_count":12,"quantity":1,"notes":{"email":email,"product":"unhinged_pro","trial":"false"}})
+        else:
+            # start_at delays the first real charge by TRIAL_DAYS — Razorpay still
+            # authenticates a payment method immediately (subscription.authenticated
+            # webhook fires right away), but doesn't actually charge the card until
+            # start_at passes. We grant Pro access on authentication (see webhook
+            # handler), not on the first charge, so the trial is genuinely free.
+            start_at = int(time.time()) + TRIAL_DAYS*86400
+            sub = c.subscription.create({"plan_id":plan,"total_count":12,"quantity":1,"start_at":start_at,"notes":{"email":email,"product":"unhinged_pro","trial":"true"}})
         with db.get_db() as conn:
             conn.execute("UPDATE users SET razorpay_sub_id=? WHERE email=?",(sub["id"],email))
-        return {"subscription_id":sub["id"],"payment_link":sub.get("short_url",""),"trial_days":TRIAL_DAYS}
+        return {"subscription_id":sub["id"],"payment_link":sub.get("short_url",""),"trial_days":0 if already_trialed else TRIAL_DAYS}
     except Exception as e:
         log.error(f"Razorpay error: {e}")
         raise HTTPException(500,f"Payment error: {e}")
@@ -406,6 +413,7 @@ async def rz_webhook(request: Request):
         # window only, so cancelling before the real charge correctly ends
         # access at day 7, not day 30.
         db.set_pro(email, sub_id, pay_id, days=TRIAL_DAYS, in_trial=True)
+        db.mark_trial_used(email)
         log.info(f"Trial started: {email} ({TRIAL_DAYS} days)")
     elif event in ("subscription.activated","subscription.charged","payment.captured"):
         # Real payment succeeded — either the trial converted to paid, or this

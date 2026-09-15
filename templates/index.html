@@ -556,7 +556,13 @@ async function processUpgrade(email) {
     }
     if (d.payment_link) {
       window.open(d.payment_link, "_blank");
-      if (btn) { btn.textContent = "Complete payment in new tab ↗"; btn.disabled = false; }
+      if (btn) {
+        // trial_days is 0 for emails that already used a trial before — be
+        // honest about what's actually about to happen instead of always
+        // implying a free trial.
+        btn.textContent = d.trial_days > 0 ? "Complete payment in new tab ↗" : "Complete payment (billed immediately) ↗";
+        btn.disabled = false;
+      }
     } else {
       if (btn) { btn.textContent = "Get Pro →"; btn.disabled = false; }
       document.getElementById("errBox").textContent = d.message || d.detail || "Payment error.";
