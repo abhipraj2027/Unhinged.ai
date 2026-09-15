@@ -1,31 +1,61 @@
-import sqlite3, os, time
+import os, time, re
+import psycopg2
+import psycopg2.extras
 from contextlib import contextmanager
 from prompts import ROAST_PROMPT, REWRITE_PROMPT
 
-DB_PATH = os.getenv("DB_PATH", "./data/unhinged.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
 FREE_DAILY = 5
 PRO_DAILY = 30
 
-def _ensure_dir():
-    d = os.path.dirname(DB_PATH)
-    if d: os.makedirs(d, exist_ok=True)
+class _PGCursorWrapper:
+    """Mimics sqlite3's cursor.execute()/.fetchone()/.fetchall() interface on
+    top of psycopg2, so the ~50 functions below (all written against the
+    sqlite3 API) don't need to be individually rewritten. Translates '?'
+    placeholders to '%s' and returns dict-like rows via RealDictCursor,
+    matching sqlite3.Row's behavior (both row["col"] and dict(row) work)."""
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def execute(self, query, params=()):
+        pg_query = query.replace("?", "%s")
+        self._cursor.execute(pg_query, params)
+        return self
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+class _PGConnWrapper:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, query, params=()):
+        cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        return _PGCursorWrapper(cur).execute(query, params)
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
 
 @contextmanager
 def get_db():
-    _ensure_dir()
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
+    conn = psycopg2.connect(DATABASE_URL)
+    wrapped = _PGConnWrapper(conn)
     try:
-        yield conn
-        conn.commit()
+        yield wrapped
+        wrapped.commit()
     finally:
-        conn.close()
+        wrapped.close()
 
 def init_db():
     with get_db() as db:
         db.execute("""CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             email TEXT UNIQUE NOT NULL,
             is_pro INTEGER DEFAULT 0,
             scans_used INTEGER DEFAULT 0,
@@ -33,16 +63,16 @@ def init_db():
             daily_reset TEXT DEFAULT '',
             razorpay_sub_id TEXT,
             razorpay_pay_id TEXT,
-            created_at REAL DEFAULT (strftime('%s','now')),
+            created_at REAL DEFAULT (EXTRACT(EPOCH FROM NOW())),
             expires_at REAL,
             last_scan_at REAL)""")
         db.execute("""CREATE TABLE IF NOT EXISTS llm_config (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             config_key TEXT UNIQUE NOT NULL,
             config_value TEXT NOT NULL,
-            updated_at REAL DEFAULT (strftime('%s','now')))""")
-        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("credits","INTEGER DEFAULT 0"),("in_trial","INTEGER DEFAULT 0"),("trial_reminder_sent","INTEGER DEFAULT 0"),("trial_used","INTEGER DEFAULT 0"),("last_login_source","TEXT DEFAULT ''")]:
-            try: db.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
+            updated_at REAL DEFAULT (EXTRACT(EPOCH FROM NOW())))""")
+        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("credits","INTEGER DEFAULT 0"),("in_trial","INTEGER DEFAULT 0"),("trial_reminder_sent","INTEGER DEFAULT 0"),("trial_used","INTEGER DEFAULT 0"),("last_login_source","TEXT DEFAULT ''"),("password_hash","TEXT")]:
+            try: db.execute(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col} {defn}")
             except: pass
         # Free tier: cheap/fast Groq model (near-zero cost)
         rp_free = os.getenv("LLM_ROAST_PROVIDER_FREE", os.getenv("LLM_ROAST_PROVIDER","groq"))
@@ -65,36 +95,32 @@ def init_db():
         }
         # Teams & auth tables
         db.execute("""CREATE TABLE IF NOT EXISTS teams (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, owner_email TEXT NOT NULL,
+            id SERIAL PRIMARY KEY, name TEXT NOT NULL, owner_email TEXT NOT NULL,
             seats INTEGER DEFAULT 5, is_active INTEGER DEFAULT 1, invite_code TEXT UNIQUE,
-            razorpay_sub_id TEXT, created_at REAL DEFAULT (strftime('%s','now')))""")
+            razorpay_sub_id TEXT, created_at REAL DEFAULT (EXTRACT(EPOCH FROM NOW())))""")
         db.execute("""CREATE TABLE IF NOT EXISTS team_members (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, team_id INTEGER NOT NULL, email TEXT NOT NULL,
-            role TEXT DEFAULT 'member', joined_at REAL DEFAULT (strftime('%s','now')),
+            id SERIAL PRIMARY KEY, team_id INTEGER NOT NULL, email TEXT NOT NULL,
+            role TEXT DEFAULT 'member', joined_at REAL DEFAULT (EXTRACT(EPOCH FROM NOW())),
             UNIQUE(team_id, email), FOREIGN KEY(team_id) REFERENCES teams(id))""")
         db.execute("""CREATE TABLE IF NOT EXISTS scan_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, score REAL,
-            scanned_at REAL DEFAULT (strftime('%s','now')))""")
+            id SERIAL PRIMARY KEY, email TEXT NOT NULL, score REAL,
+            scanned_at REAL DEFAULT (EXTRACT(EPOCH FROM NOW())))""")
         # Emails a founder specifies at checkout time, before payment/team creation.
         # Applied automatically once the webhook confirms the subscription is active.
         db.execute("""CREATE TABLE IF NOT EXISTS pending_team_members (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, razorpay_sub_id TEXT NOT NULL, email TEXT NOT NULL,
-            created_at REAL DEFAULT (strftime('%s','now')))""")
+            id SERIAL PRIMARY KEY, razorpay_sub_id TEXT NOT NULL, email TEXT NOT NULL,
+            created_at REAL DEFAULT (EXTRACT(EPOCH FROM NOW())))""")
         # One-time credit pack purchases. order_id is unique so a webhook retry
         # can never double-credit the same payment.
         db.execute("""CREATE TABLE IF NOT EXISTS credit_purchases (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, razorpay_order_id TEXT UNIQUE NOT NULL,
+            id SERIAL PRIMARY KEY, razorpay_order_id TEXT UNIQUE NOT NULL,
             email TEXT NOT NULL, credits INTEGER NOT NULL, amount_inr INTEGER NOT NULL,
-            status TEXT DEFAULT 'created', created_at REAL DEFAULT (strftime('%s','now')))""")
-        # Add columns if upgrading
-        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("password_hash","TEXT")]:
-            try: db.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
-            except: pass
-        try: db.execute("ALTER TABLE teams ADD COLUMN invite_code TEXT")
+            status TEXT DEFAULT 'created', created_at REAL DEFAULT (EXTRACT(EPOCH FROM NOW())))""")
+        try: db.execute("ALTER TABLE teams ADD COLUMN IF NOT EXISTS invite_code TEXT")
         except: pass
 
         for k,v in defaults.items():
-            db.execute("INSERT OR REPLACE INTO llm_config(config_key,config_value) VALUES(?,?)",(k,v))
+            db.execute("INSERT INTO llm_config(config_key,config_value) VALUES(?,?) ON CONFLICT(config_key) DO UPDATE SET config_value=excluded.config_value",(k,v))
 
 def _today():
     from datetime import datetime
@@ -138,7 +164,7 @@ def inc_scan(email):
     with get_db() as db:
         db.execute("""UPDATE users SET
             daily_scans=CASE WHEN daily_reset!=? THEN 1 ELSE daily_scans+1 END,
-            daily_reset=?, scans_used=scans_used+1, last_scan_at=strftime('%s','now')
+            daily_reset=?, scans_used=scans_used+1, last_scan_at=EXTRACT(EPOCH FROM NOW())
             WHERE email=?""",(today,today,email))
 
 def set_pro(email, sub_id=None, pay_id=None, days=30, in_trial=False):
@@ -205,7 +231,7 @@ def get_config():
 def set_config(key, value):
     global _cfg_ts
     with get_db() as db:
-        db.execute("INSERT INTO llm_config(config_key,config_value,updated_at) VALUES(?,?,strftime('%s','now')) ON CONFLICT(config_key) DO UPDATE SET config_value=excluded.config_value,updated_at=excluded.updated_at",(key,value))
+        db.execute("INSERT INTO llm_config(config_key,config_value,updated_at) VALUES(?,?,EXTRACT(EPOCH FROM NOW())) ON CONFLICT(config_key) DO UPDATE SET config_value=excluded.config_value,updated_at=excluded.updated_at",(key,value))
     _cfg_ts = 0
 
 def get_stats():
@@ -267,7 +293,7 @@ def create_reset_token(email):
     expires = time.time() + 3600  # 1 hour
     with get_db() as db:
         db.execute("""CREATE TABLE IF NOT EXISTS reset_tokens (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             email TEXT NOT NULL,
             token TEXT UNIQUE NOT NULL,
             expires_at REAL NOT NULL,
@@ -278,7 +304,7 @@ def create_reset_token(email):
 def verify_reset_token(token):
     with get_db() as db:
         db.execute("""CREATE TABLE IF NOT EXISTS reset_tokens (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             email TEXT NOT NULL,
             token TEXT UNIQUE NOT NULL,
             expires_at REAL NOT NULL,
@@ -324,7 +350,7 @@ def create_team(name, owner_email, seats=5, razorpay_sub_id=None):
                    (name, owner_email, seats, code, razorpay_sub_id))
         team = db.execute("SELECT * FROM teams WHERE owner_email=? ORDER BY id DESC LIMIT 1", (owner_email,)).fetchone()
         team_id = team["id"]
-        db.execute("INSERT OR IGNORE INTO team_members(team_id,email,role) VALUES(?,?,?)", (team_id, owner_email, "owner"))
+        db.execute("INSERT INTO team_members(team_id,email,role) VALUES(?,?,?) ON CONFLICT (team_id, email) DO NOTHING", (team_id, owner_email, "owner"))
         # Create user if not exists (inline, no nested connection)
         existing = db.execute("SELECT id FROM users WHERE email=?", (owner_email,)).fetchone()
         if not existing:
@@ -375,7 +401,7 @@ def add_team_member(team_id, email):
         if not team: return {"error": "Team not found"}
         current = db.execute("SELECT COUNT(*) c FROM team_members WHERE team_id=?", (team_id,)).fetchone()["c"]
         if current >= team["seats"]: return {"error": f"Team full ({team['seats']} seats)"}
-        db.execute("INSERT OR IGNORE INTO team_members(team_id,email,role) VALUES(?,?,?)", (team_id, email, "member"))
+        db.execute("INSERT INTO team_members(team_id,email,role) VALUES(?,?,?) ON CONFLICT (team_id, email) DO NOTHING", (team_id, email, "member"))
         existing = db.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
         if not existing:
             db.execute("INSERT INTO users(email) VALUES(?)", (email,))
@@ -529,9 +555,9 @@ def get_leaderboard(team_id, days=7):
     with get_db() as db:
         rows = db.execute("""SELECT sl.email,
             COUNT(*) as total_scans,
-            ROUND(AVG(sl.score),1) as avg_score,
-            ROUND(MAX(sl.score),1) as max_score,
-            ROUND(MIN(sl.score),1) as min_score
+            ROUND(AVG(sl.score)::numeric,1) as avg_score,
+            ROUND(MAX(sl.score)::numeric,1) as max_score,
+            ROUND(MIN(sl.score)::numeric,1) as min_score
             FROM scan_log sl
             JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
             WHERE sl.scanned_at > ?
@@ -549,9 +575,9 @@ def get_team_awards(team_id):
         # This week stats per user
         this_week_stats = db.execute("""SELECT sl.email,
             COUNT(*) as scans,
-            ROUND(AVG(sl.score),1) as avg,
-            ROUND(MAX(sl.score),1) as peak,
-            ROUND(MIN(sl.score),1) as lowest
+            ROUND(AVG(sl.score)::numeric,1) as avg,
+            ROUND(MAX(sl.score)::numeric,1) as peak,
+            ROUND(MIN(sl.score)::numeric,1) as lowest
             FROM scan_log sl
             JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
             WHERE sl.scanned_at > ?
@@ -563,7 +589,7 @@ def get_team_awards(team_id):
 
         # Last week stats per user (for improvement calc)
         last_week_stats = db.execute("""SELECT sl.email,
-            ROUND(AVG(sl.score),1) as avg
+            ROUND(AVG(sl.score)::numeric,1) as avg
             FROM scan_log sl
             JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
             WHERE sl.scanned_at > ? AND sl.scanned_at <= ?
@@ -572,14 +598,14 @@ def get_team_awards(team_id):
 
         # Team overall this week
         team_row = db.execute("""SELECT
-            ROUND(AVG(sl.score),1) as team_avg,
+            ROUND(AVG(sl.score)::numeric,1) as team_avg,
             COUNT(*) as total_scans
             FROM scan_log sl
             JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
             WHERE sl.scanned_at > ?""", (team_id, this_week)).fetchone()
 
         # Team overall last week
-        last_team = db.execute("""SELECT ROUND(AVG(sl.score),1) as team_avg
+        last_team = db.execute("""SELECT ROUND(AVG(sl.score)::numeric,1) as team_avg
             FROM scan_log sl
             JOIN team_members tm ON sl.email=tm.email AND tm.team_id=?
             WHERE sl.scanned_at > ? AND sl.scanned_at <= ?""", (team_id, last_week_start, this_week)).fetchone()
