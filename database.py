@@ -41,7 +41,7 @@ def init_db():
             config_key TEXT UNIQUE NOT NULL,
             config_value TEXT NOT NULL,
             updated_at REAL DEFAULT (strftime('%s','now')))""")
-        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("credits","INTEGER DEFAULT 0"),("in_trial","INTEGER DEFAULT 0"),("trial_reminder_sent","INTEGER DEFAULT 0"),("trial_used","INTEGER DEFAULT 0")]:
+        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("credits","INTEGER DEFAULT 0"),("in_trial","INTEGER DEFAULT 0"),("trial_reminder_sent","INTEGER DEFAULT 0"),("trial_used","INTEGER DEFAULT 0"),("last_login_source","TEXT DEFAULT ''")]:
             try: db.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
             except: pass
         # Free tier: cheap/fast Groq model (near-zero cost)
@@ -236,6 +236,13 @@ def set_password(email, password):
     get_or_create(email)
     with get_db() as db:
         db.execute("UPDATE users SET password_hash=? WHERE email=?", (h, email))
+
+def set_login_source(email, source):
+    email = email.strip().lower()
+    if source not in ("web", "extension", "outlook"):
+        source = "web"
+    with get_db() as db:
+        db.execute("UPDATE users SET last_login_source=? WHERE email=?", (source, email))
 
 def check_password(email, password):
     email = email.strip().lower()

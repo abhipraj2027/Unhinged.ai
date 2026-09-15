@@ -15,7 +15,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 async function apiFetch(path, opts = {}) {
   const { token } = await chrome.storage.local.get(["authToken"]);
-  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+  const headers = { "Content-Type": "application/json", "X-Client": "extension", ...(opts.headers || {}) };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const r = await fetch(`${BACKEND}${path}`, { ...opts, headers });
   let data = {};

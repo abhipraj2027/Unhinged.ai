@@ -379,6 +379,8 @@ async function searchUser(){
     var pro=d.is_pro?'<span style="background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;padding:1px 6px;border-radius:99px;font-size:9px;font-weight:700">PRO</span>':'<span style="background:rgba(255,255,255,.06);color:#71717A;padding:1px 6px;border-radius:99px;font-size:9px;font-weight:700">FREE</span>';
     var team=d.team?'<div style="font-size:11px;color:#22C55E;margin-top:4px">Team: '+d.team.name+'</div>':'';
     var html='<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>'+d.email+'</strong> '+pro+team+'</div></div>';
+    var source=d.last_login_source?'<div style="font-size:11px;color:#71717A;margin-top:4px">Last login via: <strong style="color:#E4E4E7">'+d.last_login_source+'</strong></div>':'';
+    html+=source;
     html+='<div style="font-size:11px;color:#71717A;margin-top:6px;font-family:JetBrains Mono,monospace">Scans: '+d.scans_used+' total · '+d.daily_scans+'/'+d.scans_remaining+' today</div>';
     document.getElementById('userResult').style.display='block';
     document.getElementById('userInfo').innerHTML=html;

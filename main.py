@@ -505,7 +505,7 @@ class JoinTeamReq(BaseModel):
     invite_code: str
 
 @app.post("/api/auth/signup")
-async def signup(body: SignupReq):
+async def signup(body: SignupReq, request: Request):
     email = body.email.strip().lower()
     if not email or "@" not in email:
         raise HTTPException(400, "Invalid email")
@@ -515,6 +515,7 @@ async def signup(body: SignupReq):
         raise HTTPException(409, "Account already exists. Please login.")
     db.get_or_create(email)
     db.set_password(email, body.password)
+    db.set_login_source(email, request.headers.get("X-Client", "web"))
     token = _make_token(email)
     profile = db.get_user_profile(email)
     resp = JSONResponse({"success": True, "token": token, **profile})
@@ -522,10 +523,11 @@ async def signup(body: SignupReq):
     return resp
 
 @app.post("/api/auth/login")
-async def login(body: LoginReq):
+async def login(body: LoginReq, request: Request):
     email = body.email.strip().lower()
     if not db.check_password(email, body.password):
         raise HTTPException(401, "Invalid email or password")
+    db.set_login_source(email, request.headers.get("X-Client", "web"))
     token = _make_token(email)
     profile = db.get_user_profile(email)
     resp = JSONResponse({"success": True, "token": token, **profile})

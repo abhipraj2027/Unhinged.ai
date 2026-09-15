@@ -34,7 +34,7 @@ function showToast(msg, isError = false) {
 }
 
 async function apiFetch(path, opts = {}) {
-  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+  const headers = { "Content-Type": "application/json", "X-Client": "outlook", ...(opts.headers || {}) };
   if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
   const r = await fetch(`${API}${path}`, { ...opts, headers });
   let data = {};
