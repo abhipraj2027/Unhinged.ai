@@ -137,6 +137,76 @@ async def health():
             "pro_provider":cfg.get("roast_provider_pro","?"),"pro_model":cfg.get("roast_model_pro","?")}
 
 # -- Analyze --
+class ComposeReq(BaseModel):
+    email: str = ""
+    request: str
+
+@app.post("/api/compose")
+async def compose(body: ComposeReq, request: Request):
+    ip = _get_client_ip(request)
+    if _ip_rate_limited(ip):
+        raise HTTPException(429, "Too many requests from this network. Try again later.")
+    session_email = _get_current_user(request)
+    email = session_email if session_email else body.email.strip().lower()
+    description = body.request.strip()
+    if not email or not description:
+        raise HTTPException(400, "Email and request required")
+    if len(description) < 5:
+        raise HTTPException(400, "Description too short — tell me a bit more about the email")
+    if len(description) > 1000:
+        raise HTTPException(400, "Description too long (max 1000 chars)")
+    user = db.get_or_create(email)
+    user = db.reset_daily(email) or user
+    rem = db.remaining_composes(user)
+    lim = db.compose_limit_for(user)
+    used_credit = False
+    if rem <= 0:
+        if not user.get("is_pro") and db.spend_credit(email):
+            used_credit = True
+        else:
+            msg = f"Daily limit reached ({lim}/day). Resets midnight UTC." if user.get("is_pro") else f"Free daily limit reached ({lim}/day). Buy scan credits or upgrade to Pro for 30/day."
+            return JSONResponse(status_code=402, content={"error":"limit_reached","message":msg,"is_pro":bool(user.get("is_pro")),"limit":lim,"credits":user.get("credits",0)})
+    cfg = db.get_config()
+    tier = "pro" if user.get("is_pro") else "free"
+    # Compose reuses the same rewrite-model tiering as the rewrite half of
+    # analyze — no need for a third separate model config, since it's the
+    # same "write a clean professional email" job, just from a description
+    # instead of an existing draft.
+    wp = cfg.get(f"rewrite_provider_{tier}","groq")
+    wm = cfg.get(f"rewrite_model_{tier}","openai/gpt-oss-120b")
+    cprompt = cfg.get("compose_prompt","")
+    wmax = int(cfg.get("rewrite_max_tokens","800"))
+    wtemp = float(cfg.get("rewrite_temperature","0.7"))
+    log.info(f"Compose — email:{email}, tier:{tier}, len:{len(description)}, model:{wp}/{wm}")
+    try:
+        compose_raw = await call_llm(wp, wm, cprompt, f"Write this email: {description}", wmax, wtemp)
+    except PermissionError as e:
+        log.error(f"API key error: {e}")
+        raise HTTPException(500, f"API error: {e}")
+    except ValueError as e:
+        log.error(f"Model error: {e}")
+        raise HTTPException(500, f"Model error: {e}")
+    except ConnectionError as e:
+        raise HTTPException(429, str(e))
+    except httpx.TimeoutException as e:
+        log.error(f"LLM timeout: {e}")
+        raise HTTPException(504, "The AI took too long to respond. Please try again.")
+    except httpx.HTTPStatusError as e:
+        log.error(f"LLM HTTP error: {e.response.status_code} — {e.response.text[:300]}")
+        raise HTTPException(502, "The AI provider returned an error. Please try again.")
+    except httpx.RequestError as e:
+        log.error(f"LLM network error: {e}")
+        raise HTTPException(502, "Couldn't reach the AI provider. Please try again.")
+    except Exception as e:
+        log.error(f"LLM error: {type(e).__name__}: {e}")
+        raise HTTPException(500, "Compose failed. Please try again.")
+    db.inc_compose(email)
+    user = db.get_or_create(email)
+    user = db.reset_daily(email) or user
+    subject, body_text = split_subject_and_body(compose_raw)
+    return {"subject":subject,"body":body_text,"composes_remaining":db.remaining_composes(user),"compose_limit":db.compose_limit_for(user),"is_pro":bool(user.get("is_pro")),"used_credit":used_credit,"credits":user.get("credits",0)}
+
+
 @app.post("/api/analyze")
 async def analyze(body: AnalyzeReq, request: Request):
     ip = _get_client_ip(request)

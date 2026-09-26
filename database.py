@@ -2,7 +2,7 @@ import os, time, re
 import psycopg2
 import psycopg2.extras
 from contextlib import contextmanager
-from prompts import ROAST_PROMPT, REWRITE_PROMPT
+from prompts import ROAST_PROMPT, REWRITE_PROMPT, COMPOSE_PROMPT
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 FREE_DAILY = 5
@@ -71,7 +71,7 @@ def init_db():
             config_key TEXT UNIQUE NOT NULL,
             config_value TEXT NOT NULL,
             updated_at REAL DEFAULT (EXTRACT(EPOCH FROM NOW())))""")
-        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("credits","INTEGER DEFAULT 0"),("in_trial","INTEGER DEFAULT 0"),("trial_reminder_sent","INTEGER DEFAULT 0"),("trial_used","INTEGER DEFAULT 0"),("last_login_source","TEXT DEFAULT ''"),("password_hash","TEXT")]:
+        for col, defn in [("daily_scans","INTEGER DEFAULT 0"),("daily_reset","TEXT DEFAULT ''"),("credits","INTEGER DEFAULT 0"),("in_trial","INTEGER DEFAULT 0"),("trial_reminder_sent","INTEGER DEFAULT 0"),("trial_used","INTEGER DEFAULT 0"),("last_login_source","TEXT DEFAULT ''"),("password_hash","TEXT"),("daily_composes","INTEGER DEFAULT 0"),("daily_compose_reset","TEXT DEFAULT ''")]:
             try: db.execute(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col} {defn}")
             except: pass
         # Free tier: cheap/fast Groq model (near-zero cost)
@@ -91,7 +91,7 @@ def init_db():
             "rewrite_provider_free":wp_free, "rewrite_model_free":wm_free,
             "rewrite_provider_pro":wp_pro, "rewrite_model_pro":wm_pro,
             "rewrite_max_tokens":"800", "rewrite_temperature":"0.7",
-            "roast_prompt":ROAST_PROMPT, "rewrite_prompt":REWRITE_PROMPT,
+            "roast_prompt":ROAST_PROMPT, "rewrite_prompt":REWRITE_PROMPT, "compose_prompt":COMPOSE_PROMPT,
         }
         # Teams & auth tables
         db.execute("""CREATE TABLE IF NOT EXISTS teams (
@@ -150,6 +150,9 @@ def reset_daily(email):
         if u.get("daily_reset") != today:
             db.execute("UPDATE users SET daily_scans=0,daily_reset=? WHERE email=?",(today,email))
             u["daily_scans"] = 0
+        if u.get("daily_compose_reset") != today:
+            db.execute("UPDATE users SET daily_composes=0,daily_compose_reset=? WHERE email=?",(today,email))
+            u["daily_composes"] = 0
         return u
 
 def limit_for(user):
@@ -157,6 +160,28 @@ def limit_for(user):
 
 def remaining(user):
     return max(0, limit_for(user) - (user.get("daily_scans") or 0))
+
+# Compose ("write one for me") has its own separate daily allowance from
+# analyze — same limit numbers today (5 free / 30 pro), tracked independently
+# (own reset-date column) so using one feature doesn't eat into the other's
+# quota, and resetting one can never accidentally mask a stale value in the
+# other.
+COMPOSE_FREE_DAILY = 5
+COMPOSE_PRO_DAILY = 30
+
+def compose_limit_for(user):
+    return COMPOSE_PRO_DAILY if user.get("is_pro") else COMPOSE_FREE_DAILY
+
+def remaining_composes(user):
+    return max(0, compose_limit_for(user) - (user.get("daily_composes") or 0))
+
+def inc_compose(email):
+    email = email.strip().lower()
+    today = _today()
+    with get_db() as db:
+        db.execute("""UPDATE users SET
+            daily_composes=CASE WHEN daily_compose_reset!=? THEN 1 ELSE daily_composes+1 END,
+            daily_compose_reset=? WHERE email=?""",(today,today,email))
 
 def inc_scan(email):
     email = email.strip().lower()

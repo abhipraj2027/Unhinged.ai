@@ -40,6 +40,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.action === "compose") {
+    apiFetch("/api/compose", {
+      method: "POST",
+      body: JSON.stringify({ email: msg.email, request: msg.request }),
+    })
+      .then(({ status, data }) => {
+        if (status === 402) sendResponse({ error: true, trialEnded: true, ...data });
+        else if (status >= 400) sendResponse({ error: true, message: data.detail || data.error || data.message || "Compose failed" });
+        else sendResponse({ error: false, ...data });
+      })
+      .catch((e) => sendResponse({ error: true, message: e.message || "Network error" }));
+    return true;
+  }
+
   // ── Status: prefer authenticated /api/auth/me (Bearer token) when
   //    logged in — it's authoritative and includes team info; fall back
   //    to the unauthenticated per-email check for guest mode ──

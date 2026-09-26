@@ -103,6 +103,8 @@ textarea:focus{border-color:#FF5C00;box-shadow:0 0 0 2px rgba(255,92,0,.15)}
 .btn-grab{margin-top:10px;width:100%;background:0;color:#A1A1AA;border:1px dashed rgba(255,255,255,.15);padding:10px;border-radius:8px;cursor:pointer;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.15em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:color .15s,border-color .15s}
 .btn-grab:hover{color:#FF5C00;border-color:#FF5C00}
 .btn-go{margin-top:10px;width:100%;padding:14px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:0;border-radius:10px;cursor:pointer;font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px rgba(255,92,0,.35);transition:transform .12s,box-shadow .15s}
+.mode-tab{padding:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#A1A1AA;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.04em}
+.mode-tab.active{background:rgba(255,92,0,.12);border-color:rgba(255,92,0,.4);color:#FF5C00}
 .btn-go:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(255,92,0,.5)}
 .btn-go:disabled{background:rgba(255,255,255,.06);color:#52525B;box-shadow:none;cursor:not-allowed;transform:none}
 
@@ -215,10 +217,25 @@ footer a:hover{color:#FF5C00}
     <div id="mainUI" style="display:none">
       <div class="acct-bar" id="acctBar"></div>
       <div class="trial-bar" id="trialBar"><div style="display:flex;align-items:center;gap:10px"><div class="dots" id="dots"></div><div class="tlab" id="tlab"></div></div><span id="tpill"></span></div>
-      <div class="field-row"><span class="lbl">Your draft</span><span class="cc" id="cc">0/2000</span></div>
-      <textarea id="msg" placeholder="Paste the message you're about to regret — or grab it from your open Gmail draft."></textarea>
-      <button class="btn-grab" id="grab">↓ Grab from Gmail compose</button>
-      <button class="btn-go" id="goBtn" disabled><span>🔥</span><span>How Unhinged Am I?</span></button>
+
+      <div class="mode-tabs" style="display:flex;gap:6px;margin:10px 0">
+        <button class="mode-tab active" id="tabFix" style="flex:1">Fix my draft</button>
+        <button class="mode-tab" id="tabWrite" style="flex:1">Write one for me</button>
+      </div>
+
+      <div id="fixMode">
+        <div class="field-row"><span class="lbl">Your draft</span><span class="cc" id="cc">0/2000</span></div>
+        <textarea id="msg" placeholder="Paste the message you're about to regret — or grab it from your open Gmail draft."></textarea>
+        <button class="btn-grab" id="grab">↓ Grab from Gmail compose</button>
+        <button class="btn-go" id="goBtn" disabled><span>🔥</span><span>How Unhinged Am I?</span></button>
+      </div>
+
+      <div id="writeMode" style="display:none">
+        <div class="field-row"><span class="lbl">What do you need to write?</span></div>
+        <textarea id="composeReq" placeholder="e.g. a leave request to my manager for next Monday, doctor's appointment"></textarea>
+        <button class="btn-go" id="composeBtn"><span>✍️</span><span>Draft it</span></button>
+      </div>
+
       <div id="results"></div>
     </div>
   </div>
@@ -237,6 +254,8 @@ footer a:hover{color:#FF5C00}
   const mainUI = $("#mainUI"), acctBar = $("#acctBar"), trialBar = $("#trialBar"), dots = $("#dots"), tlab = $("#tlab"), tpill = $("#tpill");
   const msg = $("#msg"), cc = $("#cc"), grab = $("#grab"), goBtn = $("#goBtn");
   const results = $("#results"), toast = $("#toast"), upLink = $("#upLink");
+  const tabFix = $("#tabFix"), tabWrite = $("#tabWrite"), fixMode = $("#fixMode"), writeMode = $("#writeMode");
+  const composeReq = $("#composeReq"), composeBtn = $("#composeBtn");
   let userMoved = false;
 
   // ── Init: check account login, then guest email ──────────
@@ -575,6 +594,57 @@ footer a:hover{color:#FF5C00}
     renderTrialBar();
     renderResults(r);
   });
+
+  // ── Mode tabs ────────────────────────────────────────────
+  tabFix.addEventListener("click", () => {
+    tabFix.classList.add("active"); tabWrite.classList.remove("active");
+    fixMode.style.display = "block"; writeMode.style.display = "none";
+    results.innerHTML = "";
+  });
+  tabWrite.addEventListener("click", () => {
+    tabWrite.classList.add("active"); tabFix.classList.remove("active");
+    writeMode.style.display = "block"; fixMode.style.display = "none";
+    results.innerHTML = "";
+  });
+
+  // ── Compose ("write one for me") ──────────────────────────
+  composeBtn.addEventListener("click", async () => {
+    const description = composeReq.value.trim();
+    if (!description) return;
+
+    renderLoading();
+    const r = await send({ action: "compose", email: currentEmail(), request: description });
+
+    if (!r || r.error) {
+      if (r?.trialEnded || r?.error === "limit_reached") return renderPaywall(status.is_pro);
+      return renderError(r?.message || r?.detail || "Something broke. Try again.");
+    }
+
+    status.is_pro = r.is_pro ?? status.is_pro;
+    renderComposeResult(r);
+  });
+
+  function renderComposeResult(d) {
+    clearLoading();
+    let html = '<div class="card rw"><div class="cap-row"><div class="cap">Draft</div><div style="display:flex;gap:6px"><button class="mini pri" id="apCompose">↳ Insert into Gmail</button></div></div>';
+    html += '<div class="rw-subj" style="font-weight:700;margin-bottom:6px">' + esc(d.subject || "") + '</div>';
+    html += '<div class="rw-body">' + esc(d.body || "").replace(/\n/g, "<br>") + '</div></div>';
+    results.innerHTML = html;
+    shadow.getElementById("apCompose").addEventListener("click", () => {
+      const el = findCompose();
+      if (!el) return showToast("No open compose window", true);
+      el.innerHTML = esc(d.body || "").replace(/\n/g, "<br>");
+      el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+      if (d.subject) {
+        const subjEl = findSubjectInput(el);
+        if (subjEl) {
+          subjEl.value = d.subject;
+          subjEl.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      }
+      showToast("Draft inserted ✓");
+    });
+  }
 
   // ── Renderers ────────────────────────────────────────────
   let loadingTimer = null;
