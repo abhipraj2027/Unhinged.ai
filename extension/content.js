@@ -43,6 +43,7 @@
 .fab:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 14px 32px rgba(255,92,0,.6)}
 .fab .badge{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;border-radius:50%;background:#22C55E;color:#000;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #141416}
 .panel{position:fixed;width:420px;max-height:min(88vh,720px);background:linear-gradient(180deg,rgba(20,20,22,.98),rgba(10,10,10,.98));color:#fff;border-radius:16px;box-shadow:0 32px 80px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(24px);display:flex;flex-direction:column;font-family:'Inter',-apple-system,sans-serif;overflow:hidden;opacity:0;transform:scale(.96) translateY(8px);transition:opacity .2s,transform .22s cubic-bezier(.22,1,.36,1);pointer-events:none;z-index:2147483647;isolation:isolate}
+@media(max-width:480px){.panel{width:calc(100vw - 24px);max-width:420px}}
 .panel.open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
 .panel::before{content:"";position:absolute;top:0;left:20px;right:20px;height:2px;background:linear-gradient(90deg,transparent,#FF5C00,transparent);opacity:.6}
 header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:grab;border-bottom:1px solid rgba(255,255,255,.05)}
@@ -50,28 +51,28 @@ header:active{cursor:grabbing}
 .brand{display:flex;align-items:center;gap:10px}
 .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#FF5C00,#FF3B30);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 10px rgba(255,92,0,.4)}
 .brand h1{margin:0;font-size:14px;font-weight:900;letter-spacing:-.01em}
-.brand .sub{margin-top:3px;font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:#71717A;font-family:ui-monospace,monospace}
+.brand .sub{margin-top:3px;font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:#8B8B94;font-family:ui-monospace,monospace}
 .hdr-acts{display:flex;gap:4px}
-.ibtn{width:28px;height:28px;border-radius:6px;background:0;border:0;cursor:pointer;color:#71717A;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s,color .15s}
+.ibtn{width:28px;height:28px;border-radius:6px;background:0;border:0;cursor:pointer;color:#8B8B94;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s,color .15s}
 .ibtn:hover{background:rgba(255,255,255,.06);color:#FF5C00}
 .body{padding:14px 16px 16px;overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:rgba(255,92,0,.3) transparent}
 .body::-webkit-scrollbar{width:6px}.body::-webkit-scrollbar-thumb{background:rgba(255,92,0,.3);border-radius:3px}
 
 /* Auth gate */
 .gate-tabs{display:flex;gap:4px;margin-bottom:14px;background:rgba(255,255,255,.03);border-radius:10px;padding:3px}
-.gate-tab{flex:1;padding:8px 4px;text-align:center;font-size:10.5px;letter-spacing:.05em;font-weight:700;color:#71717A;background:0;border:0;border-radius:7px;cursor:pointer;transition:background .15s,color .15s}
+.gate-tab{flex:1;padding:8px 4px;text-align:center;font-size:10.5px;letter-spacing:.05em;font-weight:700;color:#8B8B94;background:0;border:0;border-radius:7px;cursor:pointer;transition:background .15s,color .15s}
 .gate-tab.active{background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000}
 .gate-form{display:none}
 .gate-form.active{display:block}
 .gate-form p{font-size:12px;color:#A1A1AA;margin:0 0 12px;line-height:1.5}
-.gate-form label{display:block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#71717A;margin-bottom:5px;font-family:ui-monospace,monospace}
+.gate-form label{display:block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#8B8B94;margin-bottom:5px;font-family:ui-monospace,monospace}
 .gate-form input{width:100%;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:11px 12px;font-size:13px;outline:0;margin-bottom:10px;font-family:ui-monospace,monospace}
 .gate-form input:focus{border-color:#FF5C00}
 .gate-err{font-size:11px;color:#FCA5A5;margin:-4px 0 10px;display:none}
 .gate-err.show{display:block}
 .gate-submit{width:100%;padding:13px;background:linear-gradient(135deg,#FF5C00,#FF3B30);color:#000;border:0;border-radius:10px;cursor:pointer;font-size:13px;font-weight:800;letter-spacing:.05em}
 .gate-submit:disabled{opacity:.6;cursor:wait}
-.gate-alt{text-align:center;margin-top:12px;font-size:11px;color:#52525B}
+.gate-alt{text-align:center;margin-top:12px;font-size:11px;color:#7D7D85}
 .gate-alt a{color:#22C55E;text-decoration:none;cursor:pointer}
 
 /* Account bar (shown above textarea when logged in / guest) */
@@ -94,11 +95,11 @@ header:active{cursor:grabbing}
 
 /* Textarea + buttons */
 .field-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.lbl{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#71717A;font-family:ui-monospace,monospace}
-.cc{font-size:10px;color:#71717A;font-family:ui-monospace,monospace}
+.lbl{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#8B8B94;font-family:ui-monospace,monospace}
+.cc{font-size:10px;color:#8B8B94;font-family:ui-monospace,monospace}
 .cc.w{color:#FACC15}.cc.e{color:#EF4444}
 textarea{width:100%;min-height:96px;max-height:160px;resize:vertical;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;font-family:ui-monospace,monospace;font-size:13px;line-height:1.5;outline:0;transition:border-color .15s}
-textarea::placeholder{color:#52525B}
+textarea::placeholder{color:#7D7D85}
 textarea:focus{border-color:#FF5C00;box-shadow:0 0 0 2px rgba(255,92,0,.15)}
 .btn-grab{margin-top:10px;width:100%;background:0;color:#A1A1AA;border:1px dashed rgba(255,255,255,.15);padding:10px;border-radius:8px;cursor:pointer;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.15em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:color .15s,border-color .15s}
 .btn-grab:hover{color:#FF5C00;border-color:#FF5C00}
@@ -106,7 +107,7 @@ textarea:focus{border-color:#FF5C00;box-shadow:0 0 0 2px rgba(255,92,0,.15)}
 .mode-tab{padding:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#A1A1AA;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.04em}
 .mode-tab.active{background:rgba(255,92,0,.12);border-color:rgba(255,92,0,.4);color:#FF5C00}
 .btn-go:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(255,92,0,.5)}
-.btn-go:disabled{background:rgba(255,255,255,.06);color:#52525B;box-shadow:none;cursor:not-allowed;transform:none}
+.btn-go:disabled{background:rgba(255,255,255,.06);color:#7D7D85;box-shadow:none;cursor:not-allowed;transform:none}
 
 /* Loading */
 .loading{margin-top:16px;padding:24px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);text-align:center}
@@ -117,12 +118,12 @@ textarea:focus{border-color:#FF5C00;box-shadow:0 0 0 2px rgba(255,92,0,.15)}
 .warn-ban{margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.35);font-size:12px;line-height:1.5;color:#FCA5A5;display:flex;gap:10px;font-family:ui-monospace,monospace}
 .gauge{text-align:center;padding:18px 0 6px}
 .score{font-size:68px;line-height:1;font-weight:900;letter-spacing:-.03em}
-.score .of{color:#71717A;font-size:22px;margin-left:6px}
+.score .of{color:#8B8B94;font-size:22px;margin-left:6px}
 .flame{display:inline-block;font-size:34px;margin-left:6px;animation:flick 1.2s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(255,92,0,.7))}
 @keyframes flick{0%,100%{transform:scale(1) rotate(-2deg)}50%{transform:scale(1.1) rotate(3deg)}}
 .track{margin:10px auto 4px;width:80%;height:6px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
 .track>i{display:block;height:100%;background:#FF5C00;transition:width .8s cubic-bezier(.22,1,.36,1);border-radius:999px}
-.caption{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#71717A;margin-top:6px;font-family:ui-monospace,monospace}
+.caption{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#8B8B94;margin-top:6px;font-family:ui-monospace,monospace}
 .card{margin-top:12px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
 .card .cap{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:#FF5C00;margin-bottom:8px;font-family:ui-monospace,monospace}
 .card .cap.y{color:#FACC15}
@@ -149,8 +150,8 @@ textarea:focus{border-color:#FF5C00;box-shadow:0 0 0 2px rgba(255,92,0,.15)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{border-color:rgba(239,68,68,.5);color:#FCA5A5}
 
-footer{padding:10px 14px;border-top:1px solid rgba(255,255,255,.05);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#52525B;display:flex;justify-content:space-between;font-family:ui-monospace,monospace}
-footer a{color:#71717A;text-decoration:none;cursor:pointer}
+footer{padding:10px 14px;border-top:1px solid rgba(255,255,255,.05);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#7D7D85;display:flex;justify-content:space-between;font-family:ui-monospace,monospace}
+footer a{color:#8B8B94;text-decoration:none;cursor:pointer}
 footer a:hover{color:#FF5C00}
 </style>
 
@@ -378,7 +379,7 @@ footer a:hover{color:#FF5C00}
       } else {
         html += " <a id=\"acctLink\">Account →</a>";
       }
-      html += " <a id=\"logoutLink\" style=\"color:#71717A;font-weight:400\">Logout</a>";
+      html += " <a id=\"logoutLink\" style=\"color:#8B8B94;font-weight:400\">Logout</a>";
       acctBar.innerHTML = html;
       const teamLink = shadow.getElementById("teamLink");
       if (teamLink) teamLink.addEventListener("click", () => window.open("https://unhinged.email/teams", "_blank", "noopener"));
@@ -716,7 +717,7 @@ footer a:hover{color:#FF5C00}
     const title = isPro ? "Daily limit reached" : "Free daily limit reached";
     const desc = isPro
       ? "You've used all <b>30</b> Pro scans today.<br>Resets at <b>midnight UTC</b>."
-      : "You've used all <b>5</b> free scans today.<br>Buy more scans below, or upgrade to <b>UnHinged Pro</b> for <b>30 scans/day</b>.<br><span style=\"color:#71717A\">₹299/month · Cancel anytime</span>";
+      : "You've used all <b>5</b> free scans today.<br>Buy more scans below, or upgrade to <b>UnHinged Pro</b> for <b>30 scans/day</b>.<br><span style=\"color:#8B8B94\">₹299/month · Cancel anytime</span>";
     let html = '<div class="cta-card">';
     html += '<div class="cta-title">⚡ ' + title + '</div>';
     html += '<div class="cta-desc">' + desc + '</div>';
